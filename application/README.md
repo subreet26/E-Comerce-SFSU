@@ -25,7 +25,16 @@ python manage.py migrate
 # Server run local
 python manage.py runserver
 
-# Please go to application/pages/views.py
+# Visit the website
+http://127.0.0.1:8000/
+
+# Please go to 
+application/pages/views.py
 ## then enter your about me information
-### Add image into static/images/team
-#### Then replace views.py with your image
+
+# Add image into 
+application/static/images/team/
+## Then replace your image field in views.py to match the filename
+
+
+
