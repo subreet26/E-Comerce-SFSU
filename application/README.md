@@ -1,6 +1,13 @@
 # Local Setup
 
-# Go to front end folder
+# Go to dev branch
+git checkout dev
+git pull
+
+# Go to front end team pages branch
+git checkout feature/frontend-team-pages
+
+# Go to front end app folder
 cd application
 
 # Vitualization 
