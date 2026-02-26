@@ -15,7 +15,7 @@
 
 | Student Name | School Email | GitHub Username |
 |    :---:     |     :---:     |     :---:       |
-| member1      |               |                 |
+| Nicholas Blackson | nblackson@sfsu.edu | Twofang173 |
 | member2      |               |                 |
 | member3      |               |                 |
 | member4      |               |                 |

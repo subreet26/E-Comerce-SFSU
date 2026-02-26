@@ -95,15 +95,18 @@ TEAM = [
         "name": "Nicholas Blackson",
         "slug": "nicholas-blackson",
         "role": "Team Member",
-        "bio": "1-2 senteces bio",
-        "pronouns": "",
+        "bio": "I’m a backend developer who loves the logic of Python and Django, "
+        "though my roots are in the world of embedded systems and Navy radar tech. "
+        "Whether it’s shipboard missile systems or modern web apps, I’m at my best when "
+        "I’m under the hood making complex parts work together.",
+        "pronouns": "He/Him/His",
         "initials": "NB",
-        "image": "images/team/placeholder.svg",
+        "image": "images/team/nblackson.jpeg",
         "links": {
-            "github": "",
-            "linkedin": "",
+            "github": "http://github.com/TwoFang173",
+            "linkedin": "http://www.linkedin.com/in/nblackson",
         },
-        "interests": ["Coming soon"],
+        "interests": ["Hiking", "Cooking", "Traveling", "Family"],
     },
 ]
 
