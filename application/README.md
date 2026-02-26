@@ -1,9 +1,24 @@
-# Application Folder
+# Local Setup
 
-## Purpose
-The purpose of this folder is to store all the source code and related files for your team's application. Source code MUST NOT be in any of folder. <strong>YOU HAVE BEEN WARNED</strong>
+# Go to front end folder
+cd application
 
-You are free to organize the contents of the folder as you see fit. But remember your team is graded on how you use Git. This does include the structure of your application. Points will be deducted from poorly structured application folders.
+# Vitualization 
+python3 -m venv .venv
 
-## Please use the rest of the README.md to store important information for your team's application.
+# Activate
+source .venv/bin/activate
 
+# MUST USE donwload exact versions
+pip install -r requirements.txt
+
+# Server
+python manage.py migrate
+
+# Server run local
+python manage.py runserver
+
+# Please go to application/pages/views.py
+## then enter your about me information
+### Add image into static/images/team
+#### Then replace views.py with your image

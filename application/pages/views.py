@@ -1,0 +1,117 @@
+# pages/views.py
+## This file defines the view functions for the "pages" app. These functions handle incoming HTTP
+## requests, process any necessary data, and return HTTP responses, often by rendering templates.
+## Created by Subreet Singh on 02-23-2026
+
+from django.http import Http404
+from django.shortcuts import render
+
+TEAM = [
+    {
+        "name": "Lakshya Bhati",
+        "slug": "lakshya-bhati",
+        "role": "Team Lead",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "DS",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Subreet Singh",
+        "slug": "subreet-singh",
+        "role": "Front End Team Lead",
+        "bio": "Short 1–2 sentences.",
+        "pronouns": "",
+        "initials": "SS",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "https://github.com/subreet26",
+            "linkedin": "https://linkedin.com/in/",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Bikendra Shrestha",
+        "slug": "bikendra-shrestha",
+        "role": "Back End Team Lead",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "BS",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Michal Krupa",
+        "slug": "michal-krupa",
+        "role": "GitHub Maintainer",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "MK",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Daniel Smirnoff",
+        "slug": "daniel-smirnoff",
+        "role": "Team Member",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "DS",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Jonathan Mai",
+        "slug": "jonathan-mai",
+        "role": "Team Member",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "JM",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+    {
+        "name": "Nicholas Blackson",
+        "slug": "nicholas-blackson",
+        "role": "Team Member",
+        "bio": "1-2 senteces bio",
+        "pronouns": "",
+        "initials": "NB",
+        "image": "images/team/placeholder.svg",
+        "links": {
+            "github": "",
+            "linkedin": "",
+        },
+        "interests": ["Coming soon"],
+    },
+]
+
+def home(request):
+    return render(request, "pages/home.html", {"team": TEAM})
+
+def member_detail(request, slug):
+    member = next((m for m in TEAM if m["slug"] == slug), None)
+    if not member:
+        raise Http404("Member not found")
+    return render(request, "pages/member_detail.html", {"member": member})
