@@ -17,7 +17,7 @@
 |    :---:     |     :---:     |     :---:       |
 | Nicholas Blackson | nblackson@sfsu.edu | Twofang173 |
 | member2      |               |                 |
-| member3      |               |                 |
+| Michal Krupa | mkrupa@sfsu.edu | michalkrupa |
 | member4      |               |                 |
 | member5      |               |                 |
 | member6      |               |                 |
