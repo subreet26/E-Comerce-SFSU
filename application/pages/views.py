@@ -11,15 +11,17 @@ TEAM = [
         "name": "Lakshya Bhati",
         "slug": "lakshya-bhati",
         "role": "Team Lead",
-        "bio": "1-2 senteces bio",
-        "pronouns": "",
-        "initials": "DS",
+        "bio": "Senior @ SFSU majoring in Computer Science."
+        "I love to make solutions and create fun apps for everyone!"
+        "I find it really rewarding to see people use the things I build",
+        "pronouns": "Any",
+        "initials": "LX",
         "image": "images/team/placeholder.svg",
         "links": {
-            "github": "",
-            "linkedin": "",
+            "github": "https://github.com/LaxRaj",
+            "linkedin": "https://linkedin.com/in/lbhati",
         },
-        "interests": ["Coming soon"],
+        "interests": ["Tennis", "Cooking", "Traveling", "Reading"],
     },
     {
         "name": "Subreet Singh",
