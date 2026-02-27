@@ -1,0 +1,48 @@
+<!-- 
+pages/templates/pages/home.html
+This template extends the base template and defines the content for the home page. It displays a
+Created by Subreet Singh on 02-23-2026
+-->
+
+{% extends "pages/base.html" %}
+{% load static %}
+{% block title %}Team Home{% endblock %}
+
+{% block content %}
+  <div class="mb-10">
+    <h1 class="text-3xl font-bold tracking-tight">Meet the Team</h1>
+    <p class="mt-2 max-w-2xl text-slate-600">
+        We are Team 17, short introduction here
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {% for m in team %}
+      <a href="{% url 'member_detail' m.slug %}"
+         class="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div class="flex items-start gap-4">
+          <div class="relative">
+            <img
+              src="{% static m.image %}"
+              alt="{{ m.name }} profile photo"
+              class="h-12 w-12 rounded-full border object-cover"
+            />
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="truncate text-lg font-semibold">{{ m.name }}</h2>
+              <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                {{ m.role }}
+              </span>
+            </div>
+            <p class="mt-2 line-clamp-2 text-sm text-slate-600">{{ m.bio }}</p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <span class="text-sm font-medium text-slate-700 group-hover:text-slate-900">
+            View profile →
+          </span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}
