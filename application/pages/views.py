@@ -68,15 +68,16 @@ TEAM = [
         "name": "Daniel Smirnoff",
         "slug": "daniel-smirnoff",
         "role": "Team Member",
-        "bio": "1-2 senteces bio",
-        "pronouns": "",
+        "bio": "Im a computer science student at SFSU, outside of school my interests are Volleyball, Rock climbing and gaming."
+        " My goal is to eventually break into the game dev industry and work as a gameplay programmer or an engine programmer.",
+        "pronouns": "He/Him",
         "initials": "DS",
-        "image": "images/team/placeholder.svg",
+        "image": "images/team/dsmirnoff.jpg",
         "links": {
-            "github": "",
-            "linkedin": "",
+            "github": "https://github.com/danielsmirnoff",
+            "linkedin": "https://www.linkedin.com/in/daniel-smirnoff-8132ba211/",
         },
-        "interests": ["Coming soon"],
+        "interests": ["Game Development", "Volleyball", "Rock Climbing"],
     },
     {
         "name": "Jonathan Mai",
