@@ -16,7 +16,7 @@
 | Student Name | School Email | GitHub Username |
 |    :---:     |     :---:     |     :---:       |
 | Nicholas Blackson | nblackson@sfsu.edu | Twofang173 |
-| member2      |               |                 |
+| Subreet Singh | ssingh61@sfsu.edu | subreet26 |
 | Michal Krupa | mkrupa@sfsu.edu | michalkrupa |
 | member4      |               |                 |
 | member5      |               |                 |
