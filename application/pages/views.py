@@ -25,15 +25,17 @@ TEAM = [
         "name": "Subreet Singh",
         "slug": "subreet-singh",
         "role": "Front End Team Lead",
-        "bio": "Short 1–2 sentences.",
-        "pronouns": "",
+        "bio": "I am a senior at SFSU majoring in Computer Science."
+        "I have a passion for web development and user experience design."
+        "I am excited to lead the front end team and create an engaging platform for our users.",
+        "pronouns": "He/Him/His",
         "initials": "SS",
-        "image": "images/team/placeholder.svg",
+        "image": "images/team/SS.jpg",
         "links": {
             "github": "https://github.com/subreet26",
             "linkedin": "https://linkedin.com/in/",
         },
-        "interests": ["Coming soon"],
+        "interests": ["Sports", "Traveling", "New Restaurants"],
     },
     {
         "name": "Bikendra Shrestha",
