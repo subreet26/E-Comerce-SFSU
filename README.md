@@ -18,7 +18,7 @@
 | Nicholas Blackson | nblackson@sfsu.edu | Twofang173 |
 | Subreet Singh | ssingh61@sfsu.edu | subreet26 |
 | Michal Krupa | mkrupa@sfsu.edu | michalkrupa |
-| member4      |               |                 |
+| Jonathan Mai | jmai10@sfsu.edu | ActualLime |
 | member5      |               |                 |
 | member6      |               |                 |
 
