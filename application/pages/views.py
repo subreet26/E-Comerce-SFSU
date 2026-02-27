@@ -97,7 +97,7 @@ TEAM = [
     {
         "name": "Nicholas Blackson",
         "slug": "nicholas-blackson",
-        "role": "Team Member",
+        "role": "Backend Team Member",
         "bio": "I’m a backend developer who loves the logic of Python and Django, "
         "though my roots are in the world of embedded systems and Navy radar tech. "
         "Whether it’s shipboard missile systems or modern web apps, I’m at my best when "
