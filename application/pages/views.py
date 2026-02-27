@@ -44,7 +44,7 @@ TEAM = [
         "bio": "I am Backend lead and a senior at SFSU majoring in Computer Science. I have a passion for backend development and I am excited to lead the backend team in creating a robust and efficient platform for our users.",
         "pronouns": "",
         "initials": "BS",
-        "image": "images/team/placeholder.svg",
+        "image": "images/team/Bikendra.jpg",
         "links": {
             "github": "https://github.com/bikendrashrestha07",
             "linkedin": "",
