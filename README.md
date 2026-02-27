@@ -19,7 +19,7 @@
 | Subreet Singh | ssingh61@sfsu.edu | subreet26 |
 | Michal Krupa | mkrupa@sfsu.edu | michalkrupa |
 | Jonathan Mai | jmai10@sfsu.edu | ActualLime |
-| member5      |               |                 |
+| Bikendra Shrestha     |  bshrestha1@sfsu.edu             |        bikendrashrestha07         |
 | member6      |               |                 |
 
 ## NO code needs to be stored in the root of your repository. You may rename the application folder if you like to your team's application name. But all source code related to your team's application should be stored inside the application folder.
