@@ -29,7 +29,7 @@ application/db.sqlite3
 # ---------------------------
 # Credentials / Secrets
 # ---------------------------
-credentials/
+#credentials/
 
 # ---------------------------
 # Misc
