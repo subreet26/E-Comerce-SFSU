@@ -81,16 +81,18 @@ TEAM = [
     {
         "name": "Jonathan Mai",
         "slug": "jonathan-mai",
-        "role": "Team Member",
-        "bio": "1-2 senteces bio",
-        "pronouns": "",
+        "role": "Front End Team Member",
+        "bio": "I am a senior student at SFSU majoring in Computer Science."
+        "I am new to front end development but I am eager to learn and contribute to the team."
+        "I am excited to work on creating a user-friendly and visually appealing platform for our users.",
+        "pronouns": "He/Him",
         "initials": "JM",
-        "image": "images/team/placeholder.svg",
+        "image": "images/team/JM.jpg",
         "links": {
-            "github": "",
+            "github": "https://github.com/ActualLime",
             "linkedin": "",
         },
-        "interests": ["Coming soon"],
+        "interests": ["Gaming", "Food", "Music"],
     },
     {
         "name": "Nicholas Blackson",
