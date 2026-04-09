@@ -20,34 +20,7 @@ def base_context():
     }
 
 FEATURED_LISTINGS = [
-    {
-        "title": "Calculus Textbook",
-        "price": "$35",
-        "category": "Textbooks",
-        "posted": "2 hours ago",
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "title": "Mini Fridge",
-        "price": "$60",
-        "category": "Furniture",
-        "posted": "5 hours ago",
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "title": "Gaming Monitor",
-        "price": "$120",
-        "category": "Electronics",
-        "posted": "1 day ago",
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "title": "Math Tutoring",
-        "price": "$20/hr",
-        "category": "Services",
-        "posted": "3 days ago",
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
+
 ]
 
 RECENT_LISTINGS = [
