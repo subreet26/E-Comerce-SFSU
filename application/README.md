@@ -15,10 +15,10 @@ You are free to organize the contents of the folder as you see fit. But remember
 git checkout dev
 git pull
 
-# Go to front end team pages branch
-git checkout feature/frontend-team-pages
+# If working on new feature
+create new branch ex. feature/frontend/login
 
-# Go to front end app folder
+# Go to end app folder
 cd application
 
 # Vitualization 
@@ -36,16 +36,22 @@ python manage.py migrate
 # Server run local
 python manage.py runserver
 
-# Visit the website
+# Visit the local website
 http://127.0.0.1:8000/
 
-# Please go to 
-application/pages/views.py
-## then enter your about me information
+# Test code
+please ensure your code is working locally
 
-# Add image into 
-application/static/images/team/
-## Then replace your image field in views.py to match the filename
+# push code
+Please push code only to a feature branch
+you are allowed to mess up a feature branch as much as you want
+
+# merge code 
+do a pr request from your feature branch into dev
+2 people will need to test your code to verify it works
+
+# Server changes
+will only be done by leads
 
 
 
