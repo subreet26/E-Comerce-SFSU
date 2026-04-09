@@ -84,3 +84,41 @@ def marketplace_home(request):
         "recent_listings": RECENT_LISTINGS,
     }
     return render(request, "marketplace/home.html", context)
+
+
+# Additional view functions for login, registration, listing details, etc. would go here.
+# For example:
+# def login_view(request):
+#    return render(request, "marketplace/login.html")
+# i did add placeholders for now 
+
+def login_view(request):
+    return render(request, "marketplace/login.html")
+
+
+def register_view(request):
+    return render(request, "marketplace/register.html")
+
+
+def search_results_view(request):
+    return render(request, "marketplace/search_results.html")
+
+
+def account_view(request):
+    return render(request, "marketplace/account.html")
+
+
+def create_listing_view(request):
+    return render(request, "marketplace/create_listing.html")
+
+
+def edit_listing_view(request, listing_id):
+    return render(request, "marketplace/edit_listing.html", {"listing_id": listing_id})
+
+
+def listing_detail_view(request, listing_id):
+    return render(request, "marketplace/listing_detail.html", {"listing_id": listing_id})
+
+
+def chat_view(request):
+    return render(request, "marketplace/chat.html")
