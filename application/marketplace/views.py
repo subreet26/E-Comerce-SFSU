@@ -14,6 +14,11 @@ CATEGORIES = [
     {"name": "Other", "icon": "📦"},
 ]
 
+def base_context():
+    return {
+        "categories": CATEGORIES,
+    }
+
 FEATURED_LISTINGS = [
     {
         "title": "Calculus Textbook",

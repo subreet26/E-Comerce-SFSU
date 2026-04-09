@@ -21,24 +21,8 @@ Created by Subreet Singh on 04-09-2026
         Buy, sell, and offer services within the SFSU community
       </h1>
       <p class="mt-4 text-lg text-slate-600">
-        A student-only marketplace for finding affordable items, campus services, and trusted sellers.
+        A student and faculty marketplace for finding affordable items, campus services, and trusted sellers exclusively for SFSU members.
       </p>
-    </div>
-  </section>
-
-  <section class="mb-12">
-    <div class="mb-5 flex items-center justify-between">
-      <h2 class="text-2xl font-bold tracking-tight">Categories</h2>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {% for category in categories %}
-        <a href="#" class="rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-          <div class="mb-3 text-3xl">{{ category.icon }}</div>
-          <h3 class="font-semibold">{{ category.name }}</h3>
-          <p class="mt-1 text-sm text-slate-500">Browse {{ category.name|lower }}</p>
-        </a>
-      {% endfor %}
     </div>
   </section>
 

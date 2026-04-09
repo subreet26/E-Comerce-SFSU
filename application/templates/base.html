@@ -24,16 +24,31 @@
           </a>
 
           <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
-            <a href="{% url 'marketplace_home' %}" class="hover:text-slate-600">Browse</a>
+            <div class="relative group">
+              <button class="flex items-center gap-1 hover:text-slate-600">
+                Categories
+                <span class="text-xs">▼</span>
+              </button>
+
+              <div class="absolute left-0 top-full z-40 mt-2 hidden w-56 rounded-xl border bg-white p-2 shadow-lg group-hover:block">
+                {% for category in categories %}
+                  <a href="#" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                    {{ category.name }}
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+
             <a href="#" class="hover:text-slate-600">Create Listing</a>
           </nav>
         </div>
 
         <div class="hidden flex-1 justify-center md:flex">
-          <form class="w-full max-w-xl">
+          <form method="GET" action="{% url 'search_results' %}" class="w-full max-w-xl">
             <div class="flex rounded-full border bg-slate-50 px-4 py-2">
               <input
                 type="text"
+                name="q"
                 placeholder="Search for products or services"
                 class="w-full bg-transparent text-sm outline-none"
               />
@@ -45,8 +60,8 @@
         </div>
 
         <div class="flex items-center gap-6">
-          <a href="#" class="text-sm font-medium hover:text-slate-600">Chat</a>
-          <a href="#" class="text-sm font-medium hover:text-slate-600">Account</a>
+          <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
+          <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>
         </div>
       </div>
     </header>
