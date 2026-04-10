@@ -82,6 +82,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    } if os.getenv('USE_SQLITE', 'true').lower() == 'true' else {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('MYSQL_DATABASE', 'your_db_name'),
         'USER': os.getenv('MYSQL_USER', 'your_db_user'),
