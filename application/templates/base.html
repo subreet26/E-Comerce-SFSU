@@ -1,0 +1,71 @@
+<!-- base.html 
+ This is the base template for the "marketplace" app. It defines the overall HTML structure and includes blocks for the title and content that can be overridden by child templates.
+ Created by Subreet Singh on 04-09-2026 
+-->
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}Alli-Trade{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <header class="sticky top-0 z-30 border-b bg-white">
+      <div class="bg-yellow-200 py-2 text-center text-xs font-semibold">
+        SFSU Software Engineering Project CSC 648-848, Spring 2026. For Demonstration Only
+      </div>
+
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
+        <div class="flex items-center gap-8">
+          <a href="{% url 'marketplace_home' %}" class="text-2xl font-bold tracking-tight">
+            Alli-Trade
+          </a>
+
+          <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
+            <div class="relative group">
+              <button class="flex items-center gap-1 hover:text-slate-600">
+                Categories
+                <span class="text-xs">▼</span>
+              </button>
+
+              <div class="absolute left-0 top-full z-40 mt-2 hidden w-56 rounded-xl border bg-white p-2 shadow-lg group-hover:block">
+                {% for category in categories %}
+                  <a href="#" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                    {{ category.name }}
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+
+            <a href="#" class="hover:text-slate-600">Create Listing</a>
+          </nav>
+        </div>
+
+        <div class="hidden flex-1 justify-center md:flex">
+          <form method="GET" action="{% url 'search_results' %}" class="w-full max-w-xl">
+            <div class="flex rounded-full border bg-slate-50 px-4 py-2">
+              <input
+                type="text"
+                name="q"
+                placeholder="Search for products or services"
+                class="w-full bg-transparent text-sm outline-none"
+              />
+              <button type="submit" class="ml-3 text-sm font-semibold text-slate-700">
+                Search
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
+          <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>
+        </div>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+  </body>
+</html>

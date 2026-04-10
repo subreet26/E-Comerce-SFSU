@@ -10,7 +10,7 @@ TEAM = [
     {
         "name": "Lakshya Bhati",
         "slug": "lakshya-bhati",
-        "role": "Team Lead",
+        "role": "Team member",
         "bio": "Senior @ SFSU majoring in Computer Science."
         "I love to make solutions and create fun apps for everyone!"
         "I find it really rewarding to see people use the things I build",
@@ -26,7 +26,7 @@ TEAM = [
     {
         "name": "Subreet Singh",
         "slug": "subreet-singh",
-        "role": "Front End Team Lead",
+        "role": "Team Lead",
         "bio": "I am a senior at SFSU majoring in Computer Science."
         "I have a passion for web development and user experience design."
         "I am excited to lead the front end team and create an engaging platform for our users.",
@@ -84,7 +84,7 @@ TEAM = [
     {
         "name": "Jonathan Mai",
         "slug": "jonathan-mai",
-        "role": "Front End Team Member",
+        "role": "Front End Team Lead",
         "bio": "I am a senior student at SFSU majoring in Computer Science."
         "I am new to front end development but I am eager to learn and contribute to the team."
         "I am excited to work on creating a user-friendly and visually appealing platform for our users.",
