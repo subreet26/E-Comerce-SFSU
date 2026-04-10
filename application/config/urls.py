@@ -17,11 +17,9 @@ Including another URLconf
 ## This file defines the URL patterns for the Django project. It maps URL paths to view functions or includes other URL configurations from apps.
 ## Created by Subreet Singh on 02-23-2026
 
-from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("", include("pages.urls")),
     path("marketplace/", include("marketplace.urls")),
 ]
