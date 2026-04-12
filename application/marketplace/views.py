@@ -1,97 +1,48 @@
-# application/marketplace/views.py
-## This file defines the view functions for the "marketplace" app. These functions handle incoming HTTP
-## requests related to the marketplace, process any necessary data, and return HTTP responses, often by
-## Created by Subreet Singh on 04-09-2026
+from decimal import Decimal, InvalidOperation
 
-from django.shortcuts import render
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, render
 
-CATEGORIES = [
-    {"name": "Textbooks", "icon": "📚"},
-    {"name": "Electronics", "icon": "💻"},
-    {"name": "Furniture", "icon": "🪑"},
-    {"name": "Clothing", "icon": "👕"},
-    {"name": "Services", "icon": "🛠️"},
-    {"name": "Other", "icon": "📦"},
-]
+from backend.models import Category, Listing, ListingIntent, ListingType
 
-def base_context():
-    return {
-        "categories": CATEGORIES,
-    }
 
-FEATURED_LISTINGS = [
+def _marketplace_context(**extra_context):
+    return extra_context
 
-]
 
-RECENT_LISTINGS = [
-    {
-        "id": 1,
-        "title": "Desk Lamp",
-        "price": "$15",
-        "listing_type": "product",
-        "intent": "offered",
-        "category": "Furniture",
-        "posted": "30 minutes ago",
-        "posted_order": 1,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 2,
-        "title": "Bike Lock",
-        "price": "$10",
-        "listing_type": "product",
-        "intent": "wanted",
-        "category": "Other",
-        "posted": "1 hour ago",
-        "posted_order": 2,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 3,
-        "title": "Graphic Design Help",
-        "price": "$25",
-        "listing_type": "service",
-        "intent": "offered",
-        "category": "Services",
-        "posted": "2 hours ago",
-        "posted_order": 3,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 4,
-        "title": "Headphones",
-        "price": "$40",
-        "listing_type": "product",
-        "intent": "offered",
-        "category": "Electronics",
-        "posted": "6 hours ago",
-        "posted_order": 4,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-]
+def _parse_decimal(value):
+    if value in (None, ""):
+        return None
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _parse_category_ids(raw_category_ids):
+    category_ids = []
+    for raw_category_id in raw_category_ids:
+        try:
+            category_ids.append(int(raw_category_id))
+        except (TypeError, ValueError):
+            continue
+    return category_ids
 
 
 def marketplace_home(request):
-    context = {
-        "categories": CATEGORIES,
-        "featured_listings": FEATURED_LISTINGS,
-        "recent_listings": RECENT_LISTINGS,
-    }
+    recent_listings = Listing.objects.select_related('category').order_by('-created_at')[:4]
+    context = _marketplace_context(
+        recent_listings=recent_listings,
+    )
     return render(request, "marketplace/home.html", context)
 
 
-# Additional view functions for login, registration, listing details, etc. would go here.
-# For example:
-# def login_view(request):
-#    return render(request, "marketplace/login.html")
-# i did add placeholders for now 
-
 def login_view(request):
-    return render(request, "marketplace/login.html")
+    return render(request, "marketplace/login.html", _marketplace_context())
 
 
 def register_view(request):
-    return render(request, "marketplace/register.html")
+    return render(request, "marketplace/register.html", _marketplace_context())
 
 
 def search_results_view(request):
@@ -99,52 +50,79 @@ def search_results_view(request):
     listing_type = (request.GET.get("type") or "all").strip().lower()
     date_order = (request.GET.get("date") or "newest").strip().lower()
     intent = (request.GET.get("intent") or "all").strip().lower()
+    selected_category_ids = _parse_category_ids(request.GET.getlist("categories"))
+    price_min = _parse_decimal(request.GET.get("price_min"))
+    price_max = _parse_decimal(request.GET.get("price_max"))
 
-    results = list(RECENT_LISTINGS)  # TODO - fetch from BE
+    results = Listing.objects.select_related('category').all()
 
     if query:
-        query_lower = query.lower()
-        results = [
-            listing for listing in results
-            if query_lower in listing.get("title", "").lower()
-            or query_lower in listing.get("category", "").lower()
-        ]
+        results = results.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(category__category_name__icontains=query)
+        )
 
-    if listing_type in {"product", "service"}:
-        results = [
-            listing for listing in results
-            if listing.get("listing_type") == listing_type
-        ]
-
-    if intent in {"offered", "wanted"}:
-        results = [
-            listing for listing in results
-            if listing.get("intent") == intent
-        ]
-
-    if date_order == "oldest":
-        results.sort(key=lambda listing: listing.get("posted_order", 0), reverse=True)
+    if listing_type in ListingType.values:
+        results = results.filter(listing_type=listing_type)
     else:
-        date_order = "newest"
-        results.sort(key=lambda listing: listing.get("posted_order", 0))
+        listing_type = 'all'
+
+    if intent == 'offered':
+        intent = ListingIntent.FOR_SALE
+
+    if intent in ListingIntent.values:
+        results = results.filter(intent=intent)
+    else:
+        intent = 'all'
+
+    if selected_category_ids:
+        results = results.filter(category_id__in=selected_category_ids)
+
+    if price_min is not None:
+        results = results.filter(price__gte=price_min)
+
+    if price_max is not None:
+        results = results.filter(price__lte=price_max)
+
+    if date_order == 'oldest':
+        results = results.order_by('created_at', 'listing_id')
+    else:
+        date_order = 'newest'
+        results = results.order_by('-created_at', '-listing_id')
 
     return render(request, "marketplace/search_results.html", {
         "page_title": f"Results for {query}" if query else "Search Results",
         "results": results,
         "query": query,
-        "listing_type": listing_type if listing_type in {"all", "product", "service"} else "all",
+        "listing_type": listing_type,
         "date_order": date_order,
-        "intent": intent if intent in {"all", "offered", "wanted"} else "all",
-        "results_count": len(results),
+        "intent": intent,
+        "selected_category_ids": [str(category_id) for category_id in selected_category_ids],
+        "price_min": price_min,
+        "price_max": price_max,
+        "results_count": results.count(),
+    })
+
+
+def category_listings_view(request, category_id):
+    category = get_object_or_404(Category, pk=category_id)
+    listings = Listing.objects.select_related('category').filter(category_id=category_id).order_by('-created_at', '-listing_id')
+
+    return render(request, "marketplace/category_listings.html", {
+        "page_title": f"{category.category_name} Listings",
+        "selected_category": category,
+        "listings": listings,
+        "results_count": listings.count(),
     })
 
 
 def account_view(request):
-    return render(request, "marketplace/account.html")
+    return render(request, "marketplace/account.html", _marketplace_context())
 
 
 def create_listing_view(request):
-    return render(request, "marketplace/create_listing.html")
+    return render(request, "marketplace/create_listing.html", _marketplace_context())
 
 
 def edit_listing_view(request, listing_id):
@@ -156,4 +134,4 @@ def listing_detail_view(request, listing_id):
 
 
 def chat_view(request):
-    return render(request, "marketplace/chat.html")
+    return render(request, "marketplace/chat.html", _marketplace_context())

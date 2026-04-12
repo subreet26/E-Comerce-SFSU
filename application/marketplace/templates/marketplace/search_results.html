@@ -42,6 +42,57 @@ search_results.html
         </div>
 
         <div>
+          <p class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Categories</p>
+          <div class="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
+            {% for category in categories %}
+              <label class="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  name="categories"
+                  value="{{ category.id }}"
+                  class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                  {% if category.id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                />
+                <span>{{ category.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="price-min" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Min Price
+            </label>
+            <input
+              id="price-min"
+              name="price_min"
+              type="number"
+              min="0"
+              step="0.01"
+              value="{{ price_min|default_if_none:'' }}"
+              placeholder="0.00"
+              class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+            />
+          </div>
+          <div>
+            <label for="price-max" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Max Price
+            </label>
+            <input
+              id="price-max"
+              name="price_max"
+              type="number"
+              min="0"
+              step="0.01"
+              value="{{ price_max|default_if_none:'' }}"
+              placeholder="100.00"
+              class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+            />
+          </div>
+        </div>
+
+        <div>
           <label for="date" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Posting Date
           </label>
@@ -53,11 +104,11 @@ search_results.html
 
         <div>
           <label for="intent" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Offered / Wanted
+            For Sale / Wanted
           </label>
           <select id="intent" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
             <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
-            <option value="offered" {% if intent == 'offered' %}selected{% endif %}>On Offer</option>
+            <option value="for_sale" {% if intent == 'for_sale' %}selected{% endif %}>For Sale</option>
             <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
           </select>
         </div>
@@ -88,23 +139,23 @@ search_results.html
           {% for listing in results %}
             <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
               <img
-                src="{% static listing.image %}"
-                alt="{{ listing.title }}"
+                src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+                alt="{{ listing.name }}"
                 class="h-40 w-full object-cover"
               />
               <div class="p-5">
                 <div class="mb-3 flex items-center justify-between gap-2">
                   <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                    {{ listing.category }}
+                    {{ listing.category.category_name }}
                   </span>
-                  <span class="text-xs text-slate-500">{{ listing.posted }}</span>
+                  <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
                 </div>
-                <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
-                <p class="mt-2 text-xl font-bold">{{ listing.price }}</p>
+                <h3 class="text-lg font-semibold">{{ listing.name }}</h3>
+                <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
 
                 <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.listing_type|title }}</span>
-                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.intent|title }}</span>
+                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
                 </div>
 
                 <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">

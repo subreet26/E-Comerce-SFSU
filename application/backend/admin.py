@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Role, User, Category, Listing
+from .models import Category, Listing, PickupInformation, Product, Role, Service, User
 
 
 @admin.register(Role)
@@ -21,6 +21,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'title', 'price', 'listing_type', 'condition', 'status', 'created_at')
-    list_filter = ('listing_type', 'condition', 'status')
-    search_fields = ('title', 'description')
+    list_display = ('listing_id', 'name', 'price', 'listing_type', 'intent', 'category', 'created_at')
+    list_filter = ('listing_type', 'intent', 'category')
+    search_fields = ('name', 'description')
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('listing_id', 'name', 'price', 'category')
+
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ('listing_id', 'name', 'price', 'category')
+
+
+@admin.register(PickupInformation)
+class PickupInformationAdmin(admin.ModelAdmin):
+    list_display = ('pickup_information_id', 'contact_method', 'pickup_time', 'visibility')
