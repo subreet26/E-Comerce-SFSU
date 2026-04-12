@@ -3,82 +3,21 @@
 ## requests related to the marketplace, process any necessary data, and return HTTP responses, often by
 ## Created by Subreet Singh on 04-09-2026
 
-from django.shortcuts import render
-
-CATEGORIES = [
-    {"name": "Textbooks", "icon": "📚"},
-    {"name": "Electronics", "icon": "💻"},
-    {"name": "Furniture", "icon": "🪑"},
-    {"name": "Clothing", "icon": "👕"},
-    {"name": "Services", "icon": "🛠️"},
-    {"name": "Other", "icon": "📦"},
-]
+from django.shortcuts import render, get_object_or_404
+from backend.models import Category, Listing
 
 def base_context():
     return {
-        "categories": CATEGORIES,
+        "categories": Category.objects.all().order_by("category_name"),
     }
-
-FEATURED_LISTINGS = [
-
-]
-
-RECENT_LISTINGS = [
-    {
-        "id": 1,
-        "title": "Desk Lamp",
-        "price": "$15",
-        "listing_type": "product",
-        "intent": "offered",
-        "category": "Furniture",
-        "posted": "30 minutes ago",
-        "posted_order": 1,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 2,
-        "title": "Bike Lock",
-        "price": "$10",
-        "listing_type": "product",
-        "intent": "wanted",
-        "category": "Other",
-        "posted": "1 hour ago",
-        "posted_order": 2,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 3,
-        "title": "Graphic Design Help",
-        "price": "$25",
-        "listing_type": "service",
-        "intent": "offered",
-        "category": "Services",
-        "posted": "2 hours ago",
-        "posted_order": 3,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-    {
-        "id": 4,
-        "title": "Headphones",
-        "price": "$40",
-        "listing_type": "product",
-        "intent": "offered",
-        "category": "Electronics",
-        "posted": "6 hours ago",
-        "posted_order": 4,
-        "image": "images/marketplace/placeholder-listing.svg",
-    },
-]
 
 
 def marketplace_home(request):
-    context = {
-        "categories": CATEGORIES,
-        "featured_listings": FEATURED_LISTINGS,
-        "recent_listings": RECENT_LISTINGS,
-    }
+    context = base_context()
+    context.update({
+        "recent_listings": Listing.objects.select_related("category", "seller").order_by("-created_at")[:8],
+    })
     return render(request, "marketplace/home.html", context)
-
 
 # Additional view functions for login, registration, listing details, etc. would go here.
 # For example:
@@ -87,11 +26,11 @@ def marketplace_home(request):
 # i did add placeholders for now 
 
 def login_view(request):
-    return render(request, "marketplace/login.html")
+    return render(request, "marketplace/login.html", base_context())
 
 
 def register_view(request):
-    return render(request, "marketplace/register.html")
+    return render(request, "marketplace/register.html", base_context())
 
 
 def search_results_view(request):
@@ -147,20 +86,28 @@ def search_results_view(request):
 
 
 def account_view(request):
-    return render(request, "marketplace/account.html")
+    return render(request, "marketplace/account.html", base_context())
 
 
 def create_listing_view(request):
-    return render(request, "marketplace/create_listing.html")
+    return render(request, "marketplace/create_listing.html", base_context())
 
 
 def edit_listing_view(request, listing_id):
-    return render(request, "marketplace/edit_listing.html", {"listing_id": listing_id})
+    context = base_context()
+    context.update({"listing_id": listing_id})
+    return render(request, "marketplace/edit_listing.html", context)
 
 
 def listing_detail_view(request, listing_id):
-    return render(request, "marketplace/listing_detail.html", {"listing_id": listing_id})
+    listing = get_object_or_404(
+        Listing.objects.select_related("category", "seller"),
+        listing_id=listing_id
+    )
+    context = base_context()
+    context.update({"listing": listing})
+    return render(request, "marketplace/listing_detail.html", context)
 
 
 def chat_view(request):
-    return render(request, "marketplace/chat.html")
+    return render(request, "marketplace/chat.html", base_context())
