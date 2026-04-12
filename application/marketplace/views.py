@@ -73,7 +73,6 @@ RECENT_LISTINGS = [
 
 def marketplace_home(request):
     context = {
-        "categories": CATEGORIES,
         "featured_listings": FEATURED_LISTINGS,
         "recent_listings": RECENT_LISTINGS,
     }
