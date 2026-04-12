@@ -7,10 +7,7 @@ Created by Subreet Singh on 02-23-2026
 {% extends "pages/base.html" %}
 {% load static %}
 {% block content %}
-  <div class="mb-10">
-    <h1 class="text-3xl font-bold tracking-tight">Meet the Team</h1>
-    <p class="mt-2 max-w-2xl text-slate-600">
-        We are Team 17, short introduction here
+  <h1 class="text-3xl font-bold tracking-tight mb-10">Meet the Team</h1>
   <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
     {% for m in team %}
       <a href="{% url 'member_detail' m.slug %}"
