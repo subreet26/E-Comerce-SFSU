@@ -10,29 +10,118 @@ search_results.html
 
 {% block content %}
 <main class="mx-auto max-w-7xl px-6 py-10">
-  <section>
-    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-      {% for listing in results %}
-      <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-        <img
-          src="{% static listing.image %}"
-          alt="{{ listing.title }}"
-          class="h-48 w-full object-cover"
-        />
-        <div class="p-5">
-          <div class="mb-2 flex items-center justify-between gap-3">              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-              {{ listing.category }}
-            </span>
-            <span class="text-xs text-slate-500">{{ listing.posted }}</span>
-          </div>
-          <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
-          <p class="mt-2 text-xl font-bold">{{ listing.price }}</p>
-          <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
-            View Listing →
-          </a>
+
+  <section class="grid min-h-[500px] gap-6 lg:[grid-template-columns:220px_minmax(750px,1fr)]">
+    <aside class="h-fit rounded-2xl border bg-white p-5 shadow-sm lg:sticky lg:top-28 lg:w-[220px]">
+      <h2 class="text-base font-semibold">Search Filters</h2>
+
+      <form method="GET" action="{% url 'search_results' %}" class="mt-4 space-y-5">
+        <div>
+          <label for="search-query" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Query
+          </label>
+          <input
+            id="search-query"
+            name="q"
+            type="text"
+            value="{{ query }}"
+            placeholder="Product or service"
+            class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+          />
         </div>
-      </article>
-      {% endfor %}
+
+        <div>
+          <label for="type" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Product or Service
+          </label>
+          <select id="type" name="type" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+            <option value="all" {% if listing_type == 'all' %}selected{% endif %}>All</option>
+            <option value="product" {% if listing_type == 'product' %}selected{% endif %}>Product</option>
+            <option value="service" {% if listing_type == 'service' %}selected{% endif %}>Service</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="date" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Posting Date
+          </label>
+          <select id="date" name="date" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+            <option value="newest" {% if date_order == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="oldest" {% if date_order == 'oldest' %}selected{% endif %}>Oldest</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="intent" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Offered / Wanted
+          </label>
+          <select id="intent" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+            <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
+            <option value="offered" {% if intent == 'offered' %}selected{% endif %}>On Offer</option>
+            <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+            Apply
+          </button>
+          <a href="{% url 'search_results' %}" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Reset</a>
+        </div>
+      </form>
+    </aside>
+
+    <div class="min-w-0 rounded-2xl border bg-white p-6 shadow-sm lg:min-w-[750px]">
+      <h1 class="text-3xl font-bold tracking-tight">Search Results</h1>
+      {% if query %}
+        <p class="mt-2 text-sm text-slate-600">Showing results for: <span class="font-semibold text-slate-900">{{ query }}</span></p>
+      {% endif %}
+      <div class="mb-4 text-sm text-slate-600">
+        {% if results_count == 1 %}
+          1 result found.
+        {% elif results_count > 1 %}
+          {{ results_count }} results found.
+        {% endif %}
+      </div>
+      {% if results %}
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {% for listing in results %}
+            <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <img
+                src="{% static listing.image %}"
+                alt="{{ listing.title }}"
+                class="h-40 w-full object-cover"
+              />
+              <div class="p-5">
+                <div class="mb-3 flex items-center justify-between gap-2">
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    {{ listing.category }}
+                  </span>
+                  <span class="text-xs text-slate-500">{{ listing.posted }}</span>
+                </div>
+                <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
+                <p class="mt-2 text-xl font-bold">{{ listing.price }}</p>
+
+                <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.listing_type|title }}</span>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.intent|title }}</span>
+                </div>
+
+                <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  View Listing ->
+                </a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed p-10 text-slate-600">
+          <div class="text-center">
+            <p class="text-base font-semibold text-slate-800">There are no results.</p>
+            <p class="mt-2 text-sm">Try changing one or more filters to broaden your search.</p>
+          </div>
+        </div>
+      {% endif %}
     </div>
   </section>
 </main>

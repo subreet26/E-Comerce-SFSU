@@ -25,31 +25,47 @@ FEATURED_LISTINGS = [
 
 RECENT_LISTINGS = [
     {
+        "id": 1,
         "title": "Desk Lamp",
         "price": "$15",
+        "listing_type": "product",
+        "intent": "offered",
         "category": "Furniture",
         "posted": "30 minutes ago",
+        "posted_order": 1,
         "image": "images/marketplace/placeholder-listing.svg",
     },
     {
+        "id": 2,
         "title": "Bike Lock",
         "price": "$10",
+        "listing_type": "product",
+        "intent": "wanted",
         "category": "Other",
         "posted": "1 hour ago",
+        "posted_order": 2,
         "image": "images/marketplace/placeholder-listing.svg",
     },
     {
+        "id": 3,
         "title": "Graphic Design Help",
         "price": "$25",
+        "listing_type": "service",
+        "intent": "offered",
         "category": "Services",
         "posted": "2 hours ago",
+        "posted_order": 3,
         "image": "images/marketplace/placeholder-listing.svg",
     },
     {
+        "id": 4,
         "title": "Headphones",
         "price": "$40",
+        "listing_type": "product",
+        "intent": "offered",
         "category": "Electronics",
         "posted": "6 hours ago",
+        "posted_order": 4,
         "image": "images/marketplace/placeholder-listing.svg",
     },
 ]
@@ -79,14 +95,48 @@ def register_view(request):
 
 
 def search_results_view(request):
-    query = request.GET.get("query", None) or "All"
-    results = RECENT_LISTINGS # TODO - fetch from BE
-    
-    return render(request, "marketplace/search_results.html", dict(
-        page_title="Results for %s" % query,
-        results=results,
-        query=query
-    ))
+    query = (request.GET.get("q") or request.GET.get("query") or "").strip()
+    listing_type = (request.GET.get("type") or "all").strip().lower()
+    date_order = (request.GET.get("date") or "newest").strip().lower()
+    intent = (request.GET.get("intent") or "all").strip().lower()
+
+    results = list(RECENT_LISTINGS)  # TODO - fetch from BE
+
+    if query:
+        query_lower = query.lower()
+        results = [
+            listing for listing in results
+            if query_lower in listing.get("title", "").lower()
+            or query_lower in listing.get("category", "").lower()
+        ]
+
+    if listing_type in {"product", "service"}:
+        results = [
+            listing for listing in results
+            if listing.get("listing_type") == listing_type
+        ]
+
+    if intent in {"offered", "wanted"}:
+        results = [
+            listing for listing in results
+            if listing.get("intent") == intent
+        ]
+
+    if date_order == "oldest":
+        results.sort(key=lambda listing: listing.get("posted_order", 0), reverse=True)
+    else:
+        date_order = "newest"
+        results.sort(key=lambda listing: listing.get("posted_order", 0))
+
+    return render(request, "marketplace/search_results.html", {
+        "page_title": f"Results for {query}" if query else "Search Results",
+        "results": results,
+        "query": query,
+        "listing_type": listing_type if listing_type in {"all", "product", "service"} else "all",
+        "date_order": date_order,
+        "intent": intent if intent in {"all", "offered", "wanted"} else "all",
+        "results_count": len(results),
+    })
 
 
 def account_view(request):
