@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-900">
+    {% block header %}
     <header class="sticky top-0 z-30 border-b bg-white">
       <div class="bg-yellow-200 py-2 text-center text-xs font-semibold">
         SFSU Software Engineering Project CSC 648-848, Spring 2026. For Demonstration Only
@@ -65,7 +66,21 @@
         </div>
       </div>
     </header>
-
+    {% endblock %}
+    
     {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="border-t bg-white">
+      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <p>© {% now "Y" %} Alli-Trade</p>
+        <nav class="flex flex-wrap gap-4">
+          <a href="{% url 'marketplace_home' %}" class="hover:text-slate-900">Home</a>
+          <a href="#" class="hover:text-slate-900">Account</a>
+          <a href="{% url 'home' %}" class="hover:text-slate-900">About Us</a>
+        </nav>
+      </div>
+    </footer>
+    {% endblock %}
   </body>
 </html>

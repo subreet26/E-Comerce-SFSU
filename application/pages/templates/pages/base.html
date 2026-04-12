@@ -44,10 +44,6 @@ Created by Subreet Singh on 02-23-2026
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t bg-white">
-      <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-slate-500">
-        © {% now "Y" %} Team 17
-      </div>
-    </footer>
+    {% block footer %}{% endblock %}
   </body>
 </html>
