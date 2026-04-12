@@ -117,10 +117,10 @@ TEAM = [
 ]
 
 def home(request):
-    return render(request, "pages/home.html", {"team": TEAM})
+    return render(request, "pages/home.html", {"team": TEAM, "page_title": "Home"})
 
 def member_detail(request, slug):
     member = next((m for m in TEAM if m["slug"] == slug), None)
     if not member:
         raise Http404("Member not found")
-    return render(request, "pages/member_detail.html", {"member": member})
+    return render(request, "pages/member_detail.html", {"member": member, "page_title": member.name})
