@@ -79,7 +79,14 @@ def register_view(request):
 
 
 def search_results_view(request):
-    return render(request, "marketplace/search_results.html")
+    query = request.GET.get("query", None) or "All"
+    results = RECENT_LISTINGS # TODO - fetch from BE
+    
+    return render(request, "marketplace/search_results.html", dict(
+        page_title="Results for %s" % query,
+        results=results,
+        query=query
+    ))
 
 
 def account_view(request):

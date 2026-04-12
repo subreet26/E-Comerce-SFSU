@@ -3,13 +3,37 @@ search_results.html
     This template defines the HTML structure for the search results page of the "marketplace" app.
     It extends the base template and displays a list of listings that match the user's search query.
     Created by Subreet Singh on 04-09-2026
+    Last rev. Michal Krupa on 04-11-2026
 -->
 {% extends "base.html" %}
-
-{% block title %}Search Results | Alli-Trade{% endblock %}
+{% load static %}
 
 {% block content %}
-<!--
-add code to display search results
--->
+<main class="mx-auto max-w-7xl px-6 py-10">
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      {% for listing in results %}
+        <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <img
+            src="{% static listing.image %}"
+            alt="{{ listing.title }}"
+            class="h-48 w-full object-cover"
+          />
+          <div class="p-5">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                {{ listing.category }}
+              </span>
+              <span class="text-xs text-slate-500">{{ listing.posted }}</span>
+            </div>
+            <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
+            <p class="mt-2 text-xl font-bold">{{ listing.price }}</p>
+            <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+              View Listing →
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
 {% endblock %}
