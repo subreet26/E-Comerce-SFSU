@@ -23,6 +23,7 @@ search_results.html
         <form method="GET" action="{% url 'search_results' %}" class="space-y-5">
           <input type="hidden" name="q" value="{{ query }}" />
 
+
           <div>
             <label for="type-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
               Product or Service
@@ -32,6 +33,57 @@ search_results.html
               <option value="product" {% if listing_type == 'product' %}selected{% endif %}>Product</option>
               <option value="service" {% if listing_type == 'service' %}selected{% endif %}>Service</option>
             </select>
+          </div>
+
+          <div>
+            <p class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Categories</p>
+            <div class="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
+              {% for category in categories %}
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    name="categories"
+                    value="{{ category.id }}"
+                    class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                    {% if category.id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                  />
+                  <span>{{ category.name }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="price-min-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Min Price
+              </label>
+              <input
+                id="price-min-mobile"
+                name="price_min"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ price_min|default_if_none:'' }}"
+                placeholder="0.00"
+                class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+              />
+            </div>
+            <div>
+              <label for="price-max-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Max Price
+              </label>
+              <input
+                id="price-max-mobile"
+                name="price_max"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ price_max|default_if_none:'' }}"
+                placeholder="100.00"
+                class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+              />
+            </div>
           </div>
 
           <div>
@@ -46,11 +98,11 @@ search_results.html
 
           <div>
             <label for="intent-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Offered / Wanted
+              For Sale / Wanted
             </label>
             <select id="intent-mobile" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
               <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
-              <option value="offered" {% if intent == 'offered' %}selected{% endif %}>On Offer</option>
+              <option value="for_sale" {% if intent == 'for_sale' %}selected{% endif %}>For Sale</option>
               <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
             </select>
           </div>
