@@ -1,7 +1,9 @@
 from backend.models import Category
 
+from .views import CATEGORIES
 
-def marketplace_categories(request):
+
+def marketplace_globals(request):
     categories = [
         {
             'id': category.category_id,
@@ -10,4 +12,8 @@ def marketplace_categories(request):
         }
         for category in Category.objects.order_by('category_name')
     ]
-    return {'categories': categories}
+    return {
+        'categories': categories,
+        "query": (request.GET.get("q") or request.GET.get("query") or "").strip(),
+    }
+
