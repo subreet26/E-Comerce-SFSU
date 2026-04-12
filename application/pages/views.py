@@ -6,6 +6,9 @@
 from django.http import Http404
 from django.shortcuts import render
 
+from marketplace.views import marketplace_home
+home = marketplace_home # marketplace.views.home(request)
+
 TEAM = [
     {
         "name": "Lakshya Bhati",
@@ -115,9 +118,6 @@ TEAM = [
         "interests": ["Hiking", "Cooking", "Traveling", "Family"],
     },
 ]
-
-def home(request):
-    return render(request, "pages/home.html", {"team": TEAM, "page_title": "Home"})
 
 def about(request):
     return render(request, "pages/about.html", {"team": TEAM})
