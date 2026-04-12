@@ -95,47 +95,54 @@ def register_view(request):
 
 
 def search_results_view(request):
-    query = (request.GET.get("q") or request.GET.get("query") or "").strip()
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from backend.models import Listing, Category
+
+    query        = (request.GET.get("q") or request.GET.get("query") or "").strip()
     listing_type = (request.GET.get("type") or "all").strip().lower()
-    date_order = (request.GET.get("date") or "newest").strip().lower()
-    intent = (request.GET.get("intent") or "all").strip().lower()
+    date_order   = (request.GET.get("date") or "newest").strip().lower()
+    intent       = (request.GET.get("intent") or "all").strip().lower()
+    category     = (request.GET.get("category") or "all").strip()
 
-    results = list(RECENT_LISTINGS)  # TODO - fetch from BE
+    # SQL query via Django ORM — %LIKE on title + description (per M2 spec)
+    listings = Listing.objects.select_related("category").all()
 
-    if query:
-        query_lower = query.lower()
-        results = [
-            listing for listing in results
-            if query_lower in listing.get("title", "").lower()
-            or query_lower in listing.get("category", "").lower()
-        ]
+    if category != "all":
+        listings = listings.filter(category__category_name=category)
 
     if listing_type in {"product", "service"}:
-        results = [
-            listing for listing in results
-            if listing.get("listing_type") == listing_type
-        ]
+        listings = listings.filter(listing_type=listing_type)
 
-    if intent in {"offered", "wanted"}:
-        results = [
-            listing for listing in results
-            if listing.get("intent") == intent
-        ]
+    if query:
+        listings = listings.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
 
     if date_order == "oldest":
-        results.sort(key=lambda listing: listing.get("posted_order", 0), reverse=True)
+        listings = listings.order_by("created_at")
     else:
         date_order = "newest"
-        results.sort(key=lambda listing: listing.get("posted_order", 0))
+        listings = listings.order_by("-created_at")
+
+    total_count = listings.count()
+
+    paginator = Paginator(listings, 8)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    db_categories = [{"name": c.category_name} for c in Category.objects.all()]
 
     return render(request, "marketplace/search_results.html", {
         "page_title": f"Results for {query}" if query else "Search Results",
-        "results": results,
+        "results": page_obj,
+        "page_obj": page_obj,
         "query": query,
         "listing_type": listing_type if listing_type in {"all", "product", "service"} else "all",
         "date_order": date_order,
         "intent": intent if intent in {"all", "offered", "wanted"} else "all",
-        "results_count": len(results),
+        "category": category,
+        "categories": db_categories,
+        "results_count": total_count,
     })
 
 
