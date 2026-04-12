@@ -97,8 +97,6 @@
                 {% endfor %}
               </div>
             </div>
-
-            <a href="#" class="hover:text-slate-600">Create Listing</a>
           </nav>
         </div>
 
@@ -120,6 +118,7 @@
         </div>
 
         <div class="hidden items-center gap-6 md:flex">
+            <a href="#" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
           {% if request.user.authenticated %} {# TODO #}
             <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
             <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>

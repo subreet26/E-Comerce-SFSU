@@ -1,8 +1,5 @@
 from backend.models import Category
 
-from .views import CATEGORIES
-
-
 def marketplace_globals(request):
     categories = [
         {
