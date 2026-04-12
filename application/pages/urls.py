@@ -8,6 +8,6 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("about/?$", views.about, name="about"),
+    path("", views.about, name="about"),
     path("team/<slug:slug>/", views.member_detail, name="member_detail"),
 ]
