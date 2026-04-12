@@ -10,7 +10,7 @@ Created by Subreet Singh on 02-23-2026
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{% block title %}Team Site{% endblock %}</title>
+    <title>{% block title %}{% if page_title %}{{page_title}} | {% endif %}Alli-trade{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
