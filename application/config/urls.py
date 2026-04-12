@@ -18,9 +18,11 @@ Including another URLconf
 ## Created by Subreet Singh on 02-23-2026
 
 from django.urls import path, include
+from django.contrib import admin
 
 urlpatterns = [
     path("", include("pages.urls")),
     path("marketplace/", include("marketplace.urls")),
+    path("admin/", admin.site.urls),
 ]
 

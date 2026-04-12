@@ -6,6 +6,9 @@
 from django.http import Http404
 from django.shortcuts import render
 
+from marketplace.views import marketplace_home
+home = marketplace_home # marketplace.views.home(request)
+
 TEAM = [
     {
         "name": "Lakshya Bhati",
@@ -116,11 +119,11 @@ TEAM = [
     },
 ]
 
-def home(request):
-    return render(request, "pages/home.html", {"team": TEAM})
+def about(request):
+    return render(request, "pages/about.html", {"team": TEAM})
 
 def member_detail(request, slug):
     member = next((m for m in TEAM if m["slug"] == slug), None)
     if not member:
         raise Http404("Member not found")
-    return render(request, "pages/member_detail.html", {"member": member})
+    return render(request, "pages/member_detail.html", {"member": member, "page_title": member.name})

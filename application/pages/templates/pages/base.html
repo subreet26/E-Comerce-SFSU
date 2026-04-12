@@ -10,7 +10,7 @@ Created by Subreet Singh on 02-23-2026
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{% block title %}Team Site{% endblock %}</title>
+    <title>{% block title %}{% if page_title %}{{page_title}} | {% endif %}Alli-trade{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
@@ -32,8 +32,8 @@ Created by Subreet Singh on 02-23-2026
             <a href="/" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
               Team
             </a>
-            <a href="#" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-              Project
+            <a href="{% url 'marketplace_home' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            Marketplace
             </a>
           </nav>
         </div>
@@ -44,10 +44,6 @@ Created by Subreet Singh on 02-23-2026
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t bg-white">
-      <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-slate-500">
-        © {% now "Y" %} Team 17
-      </div>
-    </footer>
+    {% block footer %}{% endblock %}
   </body>
 </html>
