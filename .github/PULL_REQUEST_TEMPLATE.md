@@ -1,8 +1,16 @@
 ## Overview
 <!-- Briefly summarize what this PR does and why. -->
 
+## Related JIRA Issue
+- Issue: #
+
+
 ## Screenshot(s)
 <!-- Add screenshots, recordings, or links if UI/UX is affected. -->
+
+## Required Reviewers
+- [ ] Frontend lead assigned
+- [ ] Backend lead assigned
 
 ## Testing Checklist
 - [ ] Unit tests added/updated

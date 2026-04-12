@@ -1,0 +1,15 @@
+# Auto-assign assignees/reviewers on PR open.
+# Replace placeholders with your actual GitHub usernames or team handles.
+
+addReviewers: true
+addAssignees: true
+
+reviewers:
+  - ActualLime
+  - bikendrashrestha07
+
+assignees:
+  - ActualLime
+  - bikendrashrestha07
+
+numberOfReviewers: 2
