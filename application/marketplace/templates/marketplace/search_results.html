@@ -12,29 +12,70 @@ search_results.html
 <main class="mx-auto max-w-7xl px-6 py-10">
 
   <section class="grid min-h-[500px] gap-6 lg:[grid-template-columns:220px_minmax(750px,1fr)]">
-    <aside class="h-fit rounded-2xl border bg-white p-5 shadow-sm lg:sticky lg:top-28 lg:w-[220px]">
+    <details class="group rounded-2xl border bg-white shadow-sm lg:hidden">
+      <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-base font-semibold text-slate-900">
+        Search Filters
+        <span class="text-sm font-medium text-slate-500 group-open:hidden">Show</span>
+        <span class="hidden text-sm font-medium text-slate-500 group-open:inline">Hide</span>
+      </summary>
+
+      <div class="border-t p-5">
+        <form method="GET" action="{% url 'search_results' %}" class="space-y-5">
+          <input type="hidden" name="q" value="{{ query }}" />
+
+          <div>
+            <label for="type-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Product or Service
+            </label>
+            <select id="type-mobile" name="type" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+              <option value="all" {% if listing_type == 'all' %}selected{% endif %}>All</option>
+              <option value="product" {% if listing_type == 'product' %}selected{% endif %}>Product</option>
+              <option value="service" {% if listing_type == 'service' %}selected{% endif %}>Service</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="date-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Posting Date
+            </label>
+            <select id="date-mobile" name="date" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+              <option value="newest" {% if date_order == 'newest' %}selected{% endif %}>Newest</option>
+              <option value="oldest" {% if date_order == 'oldest' %}selected{% endif %}>Oldest</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="intent-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Offered / Wanted
+            </label>
+            <select id="intent-mobile" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+              <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
+              <option value="offered" {% if intent == 'offered' %}selected{% endif %}>On Offer</option>
+              <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+              Apply
+            </button>
+            <a href="{% url 'search_results' %}" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Reset</a>
+          </div>
+        </form>
+      </div>
+    </details>
+
+    <aside class="hidden h-fit rounded-2xl border bg-white p-5 shadow-sm lg:sticky lg:top-28 lg:block lg:w-[220px]">
       <h2 class="text-base font-semibold">Search Filters</h2>
 
       <form method="GET" action="{% url 'search_results' %}" class="mt-4 space-y-5">
-        <div>
-          <label for="search-query" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Query
-          </label>
-          <input
-            id="search-query"
-            name="q"
-            type="text"
-            value="{{ query }}"
-            placeholder="Product or service"
-            class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
-          />
-        </div>
+        <input type="hidden" name="q" value="{{ query }}" />
 
         <div>
-          <label for="type" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label for="type-desktop" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Product or Service
           </label>
-          <select id="type" name="type" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+          <select id="type-desktop" name="type" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
             <option value="all" {% if listing_type == 'all' %}selected{% endif %}>All</option>
             <option value="product" {% if listing_type == 'product' %}selected{% endif %}>Product</option>
             <option value="service" {% if listing_type == 'service' %}selected{% endif %}>Service</option>
@@ -42,10 +83,10 @@ search_results.html
         </div>
 
         <div>
-          <label for="date" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label for="date-desktop" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Posting Date
           </label>
-          <select id="date" name="date" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+          <select id="date-desktop" name="date" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
             <option value="newest" {% if date_order == 'newest' %}selected{% endif %}>Newest</option>
             <option value="oldest" {% if date_order == 'oldest' %}selected{% endif %}>Oldest</option>
           </select>

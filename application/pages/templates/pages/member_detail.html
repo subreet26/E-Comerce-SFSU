@@ -11,7 +11,7 @@ Created by Subreet Singh on 02-23-2026
 {% block title %}{{ member.name }}{% endblock %}
 
 {% block content %}
-  <a href="/" class="text-sm text-slate-600 hover:text-slate-900">
+  <a href="{% url 'about' %}" class="text-sm text-slate-600 hover:text-slate-900">
     &larr; Back to team
   </a>
 

@@ -18,10 +18,68 @@
         SFSU Software Engineering Project CSC 648-848, Spring 2026. For Demonstration Only
       </div>
 
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
-        <div class="flex items-center gap-8">
-          <a href="{% url 'marketplace_home' %}" class="text-2xl font-bold tracking-tight">
-            Alli-Trade
+      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 md:flex-nowrap md:gap-4 md:px-6 md:py-4">
+        <div class="flex w-full items-center gap-2 md:hidden">
+          <a href="{% url 'marketplace_home' %}" class="flex shrink-0 items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="100 -50 200 300" role="img" aria-label="Minimal Egyptian plover head silhouette" class="h-8 w-auto text-violet-600" fill="none">
+              <title>Minimal Egyptian Plover Head</title>
+              <g fill="currentColor">
+                <circle cx="180" cy="100" r="48" />
+                <polygon points="220,92 340,110 220,128" />
+                <polygon points="140,120 200,140 160,170 110,150" />
+              </g>
+            </svg>
+            <span class="ml-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-900">
+              ALLI-TRADE
+            </span>
+          </a>
+
+          <form method="GET" action="{% url 'search_results' %}" class="min-w-0 flex-1">
+            <div class="flex items-center rounded-full border bg-slate-50 px-3 py-2">
+              <input
+                type="text"
+                name="q"
+                placeholder="Search products & services"
+                value="{{ query }}"
+                class="min-w-0 w-full bg-transparent text-sm outline-none"
+              />
+              <button type="submit" class="ml-2 shrink-0 border-l border-slate-300 pl-3 text-sm font-semibold text-slate-700">
+                Search
+              </button>
+            </div>
+          </form>
+
+          <details class="relative shrink-0">
+            <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border text-slate-700 hover:bg-slate-100">
+              <span class="sr-only">Open menu</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M3 6h18" />
+                <path d="M3 12h18" />
+                <path d="M3 18h18" />
+              </svg>
+            </summary>
+
+            <div class="absolute right-0 top-full z-40 mt-2 w-44 rounded-xl border bg-white p-2 shadow-lg">
+              <a href="{% url 'create_listing' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Create Listing</a>
+              <a href="{% url 'register' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Sign Up</a>
+              <a href="{% url 'login' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Login</a>
+            </div>
+          </details>
+        </div>
+
+        <div class="hidden items-center gap-8 md:flex">
+          <a href="{% url 'marketplace_home' %}" class="flex items-center">
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="100 -50 200 300" role="img" aria-label="Minimal Egyptian plover head silhouette" class="h-10 w-auto text-violet-600" fill="none">
+                <title>Egyptian Plover Bird</title>
+                <g fill="currentColor">
+                  <circle cx="180" cy="100" r="48" />
+                  <polygon points="220,92 340,110 220,128" />
+                  <polygon points="140,120 200,140 160,170 110,150" />
+                </g>
+              </svg>
+            </span>
+            <span class="hidden text-2xl font-bold tracking-tight md:inline">Alli-Trade</span>
           </a>
 
           <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
@@ -44,16 +102,17 @@
           </nav>
         </div>
 
-        <div class="hidden flex-1 justify-center md:flex">
+        <div class="hidden md:flex md:flex-1 md:justify-center">
           <form method="GET" action="{% url 'search_results' %}" class="w-full max-w-xl">
             <div class="flex rounded-full border bg-slate-50 px-4 py-2">
               <input
                 type="text"
                 name="q"
                 placeholder="Search for products or services"
+                value="{{ query }}"
                 class="w-full bg-transparent text-sm outline-none"
               />
-              <button type="submit" class="ml-3 text-sm font-semibold text-slate-700">
+              <button type="submit" class="ml-3 border-l border-slate-300 pl-3 text-sm font-semibold text-slate-700">
                 Search
               </button>
             </div>
