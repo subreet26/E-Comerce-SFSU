@@ -1,4 +1,4 @@
-from .views import CATEGORIES
+from backend.models import Category
 
 
 def marketplace_globals(request):
