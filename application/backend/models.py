@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class Role(models.Model):
@@ -19,7 +20,7 @@ class User(models.Model):
     last_name = models.CharField(max_length=64)
     role = models.ForeignKey(Role, on_delete=models.PROTECT, db_column='role_id', related_name='users')
     password_hash = models.CharField(max_length=256)
-    account_status = models.CharField(max_length=32)
+    account_status = models.CharField(max_length=32, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -28,6 +29,14 @@ class User(models.Model):
 
     def __str__(self):
         return self.sfsu_email
+
+    def set_password(self, raw_password):
+        """Hash and store the password using Django's built-in PBKDF2 hasher."""
+        self.password_hash = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        """Verify a raw password against the stored hash."""
+        return check_password(raw_password, self.password_hash)
 
 
 class Category(models.Model):
@@ -52,7 +61,7 @@ class Listing(models.Model):
     condition = models.CharField(max_length=64)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, db_column='category_id', related_name='listings')
     seller = models.ForeignKey(User, on_delete=models.CASCADE, db_column='seller_id', related_name='listings')
-    status = models.CharField(max_length=64)
+    status = models.CharField(max_length=64, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,3 +70,20 @@ class Listing(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Message(models.Model):
+    message_id = models.AutoField(primary_key=True, db_column='message_id')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, db_column='sender_id', related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, db_column='receiver_id', related_name='received_messages')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, db_column='listing_id', related_name='messages', null=True, blank=True)
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'message'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Message from {self.sender} to {self.receiver}"
