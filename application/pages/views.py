@@ -120,7 +120,7 @@ TEAM = [
 ]
 
 def about(request):
-    return render(request, "pages/about.html", {"team": TEAM})
+    return render(request, "pages/home.html", {"team": TEAM})
 
 def member_detail(request, slug):
     member = next((m for m in TEAM if m["slug"] == slug), None)
