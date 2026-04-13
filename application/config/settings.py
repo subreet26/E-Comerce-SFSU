@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "pages",
     "marketplace",
+    "backend",
 ]
 
 MIDDLEWARE = [
@@ -72,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'marketplace.context_processors.marketplace_globals',
             ],
         },
     },
@@ -83,10 +85,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+import os
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('MYSQL_DATABASE', '648_team17'),
+        'USER': os.getenv('MYSQL_USER', 'team17_root'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'team17'),
+        'HOST': os.getenv('MYSQL_HOST', '127.0.0.1'),
+        'PORT': os.getenv('MYSQL_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
     }
 }
 
