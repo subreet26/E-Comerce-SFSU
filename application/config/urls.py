@@ -24,7 +24,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("", include("pages.urls")),
-    path("marketplace/", include("marketplace.urls")),
+    path("", include("marketplace.urls")),
     path("admin/", admin.site.urls),
 ]
 

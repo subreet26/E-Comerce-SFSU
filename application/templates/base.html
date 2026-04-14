@@ -60,9 +60,15 @@
             </summary>
 
             <div class="absolute right-0 top-full z-40 mt-2 w-44 rounded-xl border bg-white p-2 shadow-lg">
+              {% if request.user.is_authenticated %}
+                <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
+                <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+              {% else %}
               <a href="{% url 'create_listing' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Create Listing</a>
               <a href="{% url 'register' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Sign Up</a>
               <a href="{% url 'login' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Login</a>
+              {% endif %}
             </div>
           </details>
         </div>
@@ -118,11 +124,24 @@
             </div>
           </div>
 
-          <a href="#" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
           {% if request.user.is_authenticated %}
-            <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
-            <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>
+          <div class="hidden items-center gap-6 md:flex">
+            <div class="relative group">
+              <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+                Account
+                <span class="text-xs">▼</span>
+              </button>
+
+              <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+                <div class="rounded-xl border bg-white p-2 shadow-lg">
+                    <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
+                    <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                    <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+                </div>
+              </div>
+          </div>
           {% else %}
+            <a href="{% url 'create_listing'}" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
             <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Login/Signup</a>
           {% endif %}
         </div>
