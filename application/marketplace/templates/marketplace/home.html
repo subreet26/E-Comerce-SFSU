@@ -35,6 +35,7 @@ Created by Subreet Singh on 04-09-2026
     </div>
 
     <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+<<<<<<< HEAD
   {% for listing in recent_listings %}
     <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       
@@ -58,6 +59,27 @@ Created by Subreet Singh on 04-09-2026
               {{ listing.category.category_name }}
             </span>
             <span class="text-xs text-slate-500">{{ listing.created_at|date:"M j, Y" }}</span>
+=======
+      {% for listing in recent_listings %}
+        <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <img
+            src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+            alt="{{ listing.name }}"
+            class="h-48 w-full object-cover"
+          />
+          <div class="p-5">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                {{ listing.category.category_name }}
+              </span>
+              <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
+            </div>
+            <h3 class="text-lg font-semibold">{{ listing.name }}</h3>
+            <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
+            <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+              View Listing →
+            </a>
+>>>>>>> origin/features/backend/listing-search
           </div>
 
           <h3 class="text-lg font-semibold">{{ listing.title }}</h3>

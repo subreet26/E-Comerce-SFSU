@@ -81,25 +81,6 @@
             </span>
             <span class="hidden text-2xl font-bold tracking-tight md:inline">Alli-Trade</span>
           </a>
-
-          <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
-            <div class="relative group">
-              <button class="flex items-center gap-1 hover:text-slate-600">
-                Categories
-                <span class="text-xs">▼</span>
-              </button>
-
-              <div class="absolute left-0 top-full z-40 mt-2 hidden w-56 rounded-xl border bg-white p-2 shadow-lg group-hover:block">
-                {% for category in categories %}
-                  <a href="#" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
-                    {{ category.name }}
-                  </a>
-                {% endfor %}
-              </div>
-            </div>
-
-            <a href="#" class="hover:text-slate-600">Create Listing</a>
-          </nav>
         </div>
 
         <div class="hidden md:flex md:flex-1 md:justify-center">
@@ -119,12 +100,30 @@
           </form>
         </div>
 
-        <div class="flex items-center gap-6">
-          {% if request.user.is_authenticated %} {# TODO #}
+        <div class="hidden items-center gap-6 md:flex">
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+              Browse
+              <span class="text-xs">▼</span>
+            </button>
+
+            <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+              <div class="rounded-xl border bg-white p-2 shadow-lg">
+                {% for category in categories %}
+                  <a href="{% url 'category_listings' category.id %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                    {{ category.name }}
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <a href="#" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
+          {% if request.user.authenticated %} 
             <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
             <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>
           {% else %}
-            <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Sign Up</a>
+            <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Login/Signup</a>
           {% endif %}
         </div>
       </div>

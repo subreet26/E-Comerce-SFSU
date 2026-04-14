@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+# Marketplace frontend app does not define backend models here.
