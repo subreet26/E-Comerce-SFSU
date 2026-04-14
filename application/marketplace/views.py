@@ -192,7 +192,7 @@ def search_results_view(request):
     paginator = Paginator(listings, 8)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
-    db_categories = [{"name": c.category_name} for c in Category.objects.all()]
+    db_categories = Category.objects.all().order_by("category_name")
     date_order = (request.GET.get("date") or "newest").strip().lower()
     intent = (request.GET.get("intent") or "all").strip().lower()
     selected_category_ids = _parse_category_ids(request.GET.getlist("categories"))
@@ -203,7 +203,7 @@ def search_results_view(request):
 
     if query:
         results = results.filter(
-            Q(name__icontains=query)
+            Q(title__icontains=query)
             | Q(description__icontains=query)
             | Q(category__category_name__icontains=query)
         )

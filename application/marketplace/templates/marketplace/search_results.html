@@ -43,11 +43,11 @@ search_results.html
                   <input
                     type="checkbox"
                     name="categories"
-                    value="{{ category.id }}"
+                    value="{{ category.category_id }}"
                     class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
-                    {% if category.id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                    {% if category.category_id|stringformat:"s" in selected_category_ids %}checked{% endif %}
                   />
-                  <span>{{ category.name }}</span>
+                  <span>{{ category.category_name }}</span>
                 </label>
               {% endfor %}
             </div>
@@ -142,11 +142,11 @@ search_results.html
                 <input
                   type="checkbox"
                   name="categories"
-                  value="{{ category.id }}"
+                  value="{{ category.category_id }}"
                   class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
-                  {% if category.id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                  {% if category.category_id|stringformat:"s" in selected_category_ids %}checked{% endif %}
                 />
-                <span>{{ category.name }}</span>
+                <span>{{ category.category_name }}</span>
               </label>
             {% endfor %}
           </div>
@@ -197,16 +197,6 @@ search_results.html
         </div>
 
         <div>
-<<<<<<< HEAD
-          <label for="category" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Category
-          </label>
-          <select id="category" name="category" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
-            <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
-            {% for cat in categories %}
-              <option value="{{ cat.name }}" {% if category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
-            {% endfor %}
-=======
           <label for="intent" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             For Sale / Wanted
           </label>
@@ -214,7 +204,6 @@ search_results.html
             <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
             <option value="for_sale" {% if intent == 'for_sale' %}selected{% endif %}>For Sale</option>
             <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
->>>>>>> origin/features/backend/listing-search
           </select>
         </div>
 
@@ -244,15 +233,9 @@ search_results.html
           {% for listing in results %}
             <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
               <img
-<<<<<<< HEAD
-                src="{% static 'images/marketplace/placeholder_listing.svg' %}"
-                alt="{{ listing.title }}"
-                class="h-40 w-full object-cover bg-slate-100"
-=======
                 src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
                 alt="{{ listing.name }}"
                 class="h-40 w-full object-cover"
->>>>>>> origin/features/backend/listing-search
               />
               <div class="p-5">
                 <div class="mb-3 flex items-center justify-between gap-2">
@@ -261,53 +244,21 @@ search_results.html
                   </span>
                   <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
                 </div>
-<<<<<<< HEAD
-                <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
-                <p class="mt-1 text-sm text-slate-500 line-clamp-2">{{ listing.description }}</p>
-                <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
-
-                <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.listing_type|title }}</span>
-                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.condition }}</span>
-=======
                 <h3 class="text-lg font-semibold">{{ listing.name }}</h3>
                 <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
 
                 <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
                   <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
                   <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
->>>>>>> origin/features/backend/listing-search
                 </div>
 
-                <a href="{% url 'listing_detail' listing.listing_id %}" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
-                  View Listing &rarr;
+                <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  View Listing ->
                 </a>
               </div>
             </article>
           {% endfor %}
         </div>
-        <!-- Pagination (M2 requirement 6.3 & 6.4: set amount per page + change pages) -->
-        {% if page_obj.paginator.num_pages > 1 %}
-        <nav class="mt-8 flex items-center justify-center gap-2">
-          {% if page_obj.has_previous %}
-            <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ page_obj.previous_page_number }}"
-               class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">&larr; Prev</a>
-          {% endif %}
-          {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-              <span class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{{ num }}</span>
-            {% else %}
-              <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ num }}"
-                 class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">{{ num }}</a>
-            {% endif %}
-          {% endfor %}
-          {% if page_obj.has_next %}
-            <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ page_obj.next_page_number }}"
-               class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">Next &rarr;</a>
-          {% endif %}
-        </nav>
-        {% endif %}
-
       {% else %}
         <div class="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed p-10 text-slate-600">
           <div class="text-center">

@@ -22,9 +22,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'title', 'price', 'listing_type', 'intent', 'category', 'condition', 'status', 'created_at')
-    list_filter = ('listing_type', 'condition', 'status', 'intent', 'category')
-    search_fields = ('title', 'description', 'name')
+    list_display = ('listing_id', 'title', 'price', 'listing_type', 'intent', 'category', 'condition', 'created_at')
+    list_filter = ('listing_type', 'condition', 'intent', 'category')
+    search_fields = ('title', 'description')
 
 
 @admin.register(Message)
@@ -36,12 +36,12 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'name', 'price', 'category')
+    list_display = ('listing_id', 'title', 'price', 'category')
 
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'name', 'price', 'category')
+    list_display = ('listing_id', 'title', 'price', 'category')
 
 
 @admin.register(PickupInformation)

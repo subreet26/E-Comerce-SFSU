@@ -80,9 +80,7 @@ class Listing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=200)
-    thumbnail_url = models.URLField(max_length=500, blank=True, null=True)
     condition = models.CharField(max_length=64)
-    status = models.CharField(max_length=64, default='active')
 
     class Meta:
         db_table = 'listing'
@@ -143,4 +141,3 @@ class Product(Listing):
 class Service(Listing):
     class Meta:
         db_table = 'service'
->>>>>>> origin/features/backend/listing-search
