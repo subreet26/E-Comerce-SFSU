@@ -141,17 +141,20 @@ class Command(BaseCommand):
         # Create roles
         student_role, _ = Role.objects.get_or_create(role_name="student")
 
-        # Create a seed seller user
+        # Create a seed seller user with hashed password
         seller, created = User.objects.get_or_create(
             sfsu_email="seed_seller@sfsu.edu",
             defaults={
                 "first_name": "Seed",
                 "last_name": "Seller",
                 "role": student_role,
-                "password_hash": "pbkdf2_sha256$seed_not_real",
+                "password_hash": "temp",
                 "account_status": "active",
             }
         )
+        if created:
+            seller.set_password("SeedPass123!")
+            seller.save()
 
         if Listing.objects.exists():
             self.stdout.write(self.style.WARNING("DB already has listings. Skipping seed."))
