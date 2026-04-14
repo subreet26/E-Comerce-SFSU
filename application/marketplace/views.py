@@ -2,11 +2,14 @@
 # View functions for the marketplace app.
 # Created by Subreet Singh on 04-09-2026
 
-from django.shortcuts import render, get_object_or_404, redirect
+from decimal import Decimal, InvalidOperation
+
+from django.shortcuts import render, get_object_or_404, redirect, render
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from backend.models import Category, Listing, User, Role, Message
+from backend.models import Category, Listing, ListingIntent, ListingType, User, Role, Message
+
 
 
 def base_context():
@@ -113,6 +116,41 @@ def register_view(request):
         messages.success(request, "Account created successfully!")
         return redirect("marketplace_home")
 
+
+def _marketplace_context(**extra_context):
+    return extra_context
+
+
+def _parse_decimal(value):
+    if value in (None, ""):
+        return None
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _parse_category_ids(raw_category_ids):
+    category_ids = []
+    for raw_category_id in raw_category_ids:
+        try:
+            category_ids.append(int(raw_category_id))
+        except (TypeError, ValueError):
+            continue
+    return category_ids
+
+
+def marketplace_home(request):
+    recent_listings = Listing.objects.select_related('category').order_by('-created_at')[:4]
+    context = _marketplace_context(
+        recent_listings=recent_listings,
+    )
+    return render(request, "marketplace/home.html", context)
+
+
+
+
+
     return render(request, "marketplace/register.html", base_context())
 
 
@@ -154,20 +192,65 @@ def search_results_view(request):
     paginator = Paginator(listings, 8)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
-    db_categories = [{"name": c.category_name} for c in Category.objects.all()]
+    db_categories = Category.objects.all().order_by("category_name")
+    date_order = (request.GET.get("date") or "newest").strip().lower()
+    intent = (request.GET.get("intent") or "all").strip().lower()
+    selected_category_ids = _parse_category_ids(request.GET.getlist("categories"))
+    price_min = _parse_decimal(request.GET.get("price_min"))
+    price_max = _parse_decimal(request.GET.get("price_max"))
+
+    results = Listing.objects.select_related('category').all()
+
+    if query:
+        results = results.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(category__category_name__icontains=query)
+        )
+
+    if listing_type in ListingType.values:
+        results = results.filter(listing_type=listing_type)
+    else:
+        listing_type = 'all'
+
+    if intent == 'offered':
+        intent = ListingIntent.FOR_SALE
+
+    if intent in ListingIntent.values:
+        results = results.filter(intent=intent)
+    else:
+        intent = 'all'
+
+    if selected_category_ids:
+        results = results.filter(category_id__in=selected_category_ids)
+
+    if price_min is not None:
+        results = results.filter(price__gte=price_min)
+
+    if price_max is not None:
+        results = results.filter(price__lte=price_max)
+
+    if date_order == 'oldest':
+        results = results.order_by('created_at', 'listing_id')
+    else:
+        date_order = 'newest'
+        results = results.order_by('-created_at', '-listing_id')
 
     return render(request, "marketplace/search_results.html", {
         "page_title": f"Results for {query}" if query else "Search Results",
         "results": page_obj,
         "page_obj": page_obj,
         "query": query,
-        "listing_type": listing_type if listing_type in {"all", "product", "service"} else "all",
+        "listing_type": listing_type,
         "date_order": date_order,
-        "intent": intent if intent in {"all", "offered", "wanted"} else "all",
         "category": category,
         "categories": db_categories,
         "results_count": total_count,
         "user": _get_logged_in_user(request),
+        "intent": intent,
+        "selected_category_ids": [str(category_id) for category_id in selected_category_ids],
+        "price_min": price_min,
+        "price_max": price_max,
     })
 
 
@@ -221,6 +304,18 @@ def create_listing_view(request):
     context = base_context()
     context["user"] = user
     return render(request, "marketplace/create_listing.html", context)
+
+
+def category_listings_view(request, category_id):
+    category = get_object_or_404(Category, pk=category_id)
+    listings = Listing.objects.select_related('category').filter(category_id=category_id).order_by('-created_at', '-listing_id')
+
+    return render(request, "marketplace/category_listings.html", {
+        "page_title": f"{category.category_name} Listings",
+        "selected_category": category,
+        "listings": listings,
+        "results_count": listings.count(),
+    })
 
 
 def edit_listing_view(request, listing_id):

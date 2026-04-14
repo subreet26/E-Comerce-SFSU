@@ -17,12 +17,17 @@ Including another URLconf
 ## This file defines the URL patterns for the Django project. It maps URL paths to view functions or includes other URL configurations from apps.
 ## Created by Subreet Singh on 02-23-2026
 
-from django.contrib import admin
 from django.urls import path, include
+from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("", include("pages.urls")),
     path("", include("marketplace.urls")),
-    path("about/", include("pages.urls")),
+    path("admin/", admin.site.urls),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

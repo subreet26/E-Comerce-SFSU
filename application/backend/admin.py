@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Role, User, Category, Listing, Message
+
+from .models import Category, Listing, Message, PickupInformation, Product, Role, Service, User
 
 
 @admin.register(Role)
@@ -21,8 +22,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'title', 'price', 'listing_type', 'condition', 'status', 'created_at')
-    list_filter = ('listing_type', 'condition', 'status')
+    list_display = ('listing_id', 'title', 'price', 'listing_type', 'intent', 'category', 'condition', 'created_at')
+    list_filter = ('listing_type', 'condition', 'intent', 'category')
     search_fields = ('title', 'description')
 
 
@@ -31,3 +32,18 @@ class MessageAdmin(admin.ModelAdmin):
     list_display = ('message_id', 'sender', 'receiver', 'listing', 'is_read', 'created_at')
     list_filter = ('is_read',)
     search_fields = ('content',)
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('listing_id', 'title', 'price', 'category')
+
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ('listing_id', 'title', 'price', 'category')
+
+
+@admin.register(PickupInformation)
+class PickupInformationAdmin(admin.ModelAdmin):
+    list_display = ('pickup_information_id', 'contact_method', 'pickup_time', 'visibility')

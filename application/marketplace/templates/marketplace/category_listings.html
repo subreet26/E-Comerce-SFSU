@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ selected_category.category_name }} | Alli-Trade{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-7xl px-6 py-10">
+  <section class="mb-10 rounded-3xl bg-white p-8 shadow-sm">
+    <div class="max-w-3xl">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Category
+      </p>
+      <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">{{ selected_category.category_name }}</h1>
+      {% if selected_category.category_description %}
+        <p class="mt-4 text-lg text-slate-600">{{ selected_category.category_description }}</p>
+      {% endif %}
+      <p class="mt-4 text-sm text-slate-500">{{ results_count }} listing{% if results_count != 1 %}s{% endif %}</p>
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-2xl font-bold tracking-tight">Listings</h2>
+      <a href="{% url 'search_results' %}?categories={{ selected_category.category_id }}" class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+        Open In Search
+      </a>
+    </div>
+
+    {% if listings %}
+      <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        {% for listing in listings %}
+          <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <img
+              src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+              alt="{{ listing.name }}"
+              class="h-48 w-full object-cover"
+            />
+            <div class="p-5">
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                  {{ listing.category.category_name }}
+                </span>
+                <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
+              </div>
+              <h3 class="text-lg font-semibold">{{ listing.name }}</h3>
+              <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
+              <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed p-10 text-slate-600">
+        <div class="text-center">
+          <p class="text-base font-semibold text-slate-800">No listings yet in this category.</p>
+          <p class="mt-2 text-sm">Try checking other categories from the menu above.</p>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
