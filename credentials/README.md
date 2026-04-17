@@ -15,11 +15,15 @@
     File: 'team17_grading_key.pem'
     Command: ssh -i team17_grading_key.pem ec2-user@3.135.198.114
 4. Database URL or IP and port used.
-    <br><strong> NOTE THIS DOES NOT MEAN YOUR DATABASE NEEDS A PUBLIC FACING PORT.</strong> But knowing the IP and port number will help with SSH tunneling into the database. The default port is more than sufficient for this class.
+    127.0.0.1:3306
 5. Database username
+    team17_root
 6. Database password
-7. Database name (basically the name that contains all your tables)
+    team17
+7. Database name
+    648_team17
 8. Instructions on how to use the above information.
+    http://3.135.198.114/admin/
 
 # Most important things to Remember
 ## These values need to kept update to date throughout the semester. <br>

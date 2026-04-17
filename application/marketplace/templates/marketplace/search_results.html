@@ -23,6 +23,7 @@ search_results.html
         <form method="GET" action="{% url 'search_results' %}" class="space-y-5">
           <input type="hidden" name="q" value="{{ query }}" />
 
+
           <div>
             <label for="type-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
               Product or Service
@@ -32,6 +33,57 @@ search_results.html
               <option value="product" {% if listing_type == 'product' %}selected{% endif %}>Product</option>
               <option value="service" {% if listing_type == 'service' %}selected{% endif %}>Service</option>
             </select>
+          </div>
+
+          <div>
+            <p class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Categories</p>
+            <div class="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
+              {% for category in categories %}
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    name="categories"
+                    value="{{ category.category_id }}"
+                    class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                    {% if category.category_id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                  />
+                  <span>{{ category.category_name }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="price-min-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Min Price
+              </label>
+              <input
+                id="price-min-mobile"
+                name="price_min"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ price_min|default_if_none:'' }}"
+                placeholder="0.00"
+                class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+              />
+            </div>
+            <div>
+              <label for="price-max-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Max Price
+              </label>
+              <input
+                id="price-max-mobile"
+                name="price_max"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ price_max|default_if_none:'' }}"
+                placeholder="100.00"
+                class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+              />
+            </div>
           </div>
 
           <div>
@@ -46,11 +98,11 @@ search_results.html
 
           <div>
             <label for="intent-mobile" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Offered / Wanted
+              For Sale / Wanted
             </label>
             <select id="intent-mobile" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
               <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
-              <option value="offered" {% if intent == 'offered' %}selected{% endif %}>On Offer</option>
+              <option value="for_sale" {% if intent == 'for_sale' %}selected{% endif %}>For Sale</option>
               <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
             </select>
           </div>
@@ -83,6 +135,58 @@ search_results.html
         </div>
 
         <div>
+          <p class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Categories</p>
+          <div class="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
+            {% for category in categories %}
+              <label class="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  name="categories"
+                  value="{{ category.category_id }}"
+                  class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                  {% if category.category_id|stringformat:"s" in selected_category_ids %}checked{% endif %}
+                />
+                <span>{{ category.category_name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="price-min" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Min Price
+            </label>
+            <input
+              id="price-min"
+              name="price_min"
+              type="number"
+              min="0"
+              step="0.01"
+              value="{{ price_min|default_if_none:'' }}"
+              placeholder="0.00"
+              class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+            />
+          </div>
+          <div>
+            <label for="price-max" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Max Price
+            </label>
+            <input
+              id="price-max"
+              name="price_max"
+              type="number"
+              min="0"
+              step="0.01"
+              value="{{ price_max|default_if_none:'' }}"
+              placeholder="100.00"
+              class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="date" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
           <label for="date-desktop" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Posting Date
           </label>
@@ -93,14 +197,13 @@ search_results.html
         </div>
 
         <div>
-          <label for="category" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Category
+          <label for="intent" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            For Sale / Wanted
           </label>
-          <select id="category" name="category" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
-            <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
-            {% for cat in categories %}
-              <option value="{{ cat.name }}" {% if category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
-            {% endfor %}
+          <select id="intent-desktop" name="intent" class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring">
+            <option value="all" {% if intent == 'all' %}selected{% endif %}>All</option>
+            <option value="for_sale" {% if intent == 'for_sale' %}selected{% endif %}>For Sale</option>
+            <option value="wanted" {% if intent == 'wanted' %}selected{% endif %}>Looking For</option>
           </select>
         </div>
 
@@ -130,55 +233,32 @@ search_results.html
           {% for listing in results %}
             <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
               <img
-                src="{% static 'images/marketplace/placeholder_listing.svg' %}"
-                alt="{{ listing.title }}"
-                class="h-40 w-full object-cover bg-slate-100"
+                src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+                alt="{{ listing.name }}"
+                class="h-40 w-full object-cover"
               />
               <div class="p-5">
                 <div class="mb-3 flex items-center justify-between gap-2">
                   <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                    {{ listing.category }}
+                    {{ listing.category.category_name }}
                   </span>
                   <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
                 </div>
-                <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
-                <p class="mt-1 text-sm text-slate-500 line-clamp-2">{{ listing.description }}</p>
+                <h3 class="text-lg font-semibold">{{ listing.name }}</h3>
                 <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
 
                 <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.listing_type|title }}</span>
-                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.condition }}</span>
+                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
                 </div>
 
-                <a href="{% url 'listing_detail' listing.listing_id %}" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
-                  View Listing &rarr;
+                <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  View Listing ->
                 </a>
               </div>
             </article>
           {% endfor %}
         </div>
-        <!-- Pagination (M2 requirement 6.3 & 6.4: set amount per page + change pages) -->
-        {% if page_obj.paginator.num_pages > 1 %}
-        <nav class="mt-8 flex items-center justify-center gap-2">
-          {% if page_obj.has_previous %}
-            <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ page_obj.previous_page_number }}"
-               class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">&larr; Prev</a>
-          {% endif %}
-          {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-              <span class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{{ num }}</span>
-            {% else %}
-              <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ num }}"
-                 class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">{{ num }}</a>
-            {% endif %}
-          {% endfor %}
-          {% if page_obj.has_next %}
-            <a href="?q={{ query }}&type={{ listing_type }}&date={{ date_order }}&category={{ category }}&page={{ page_obj.next_page_number }}"
-               class="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50">Next &rarr;</a>
-          {% endif %}
-        </nav>
-        {% endif %}
-
       {% else %}
         <div class="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed p-10 text-slate-600">
           <div class="text-center">

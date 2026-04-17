@@ -60,9 +60,15 @@
             </summary>
 
             <div class="absolute right-0 top-full z-40 mt-2 w-44 rounded-xl border bg-white p-2 shadow-lg">
+              {% if request.user.is_authenticated %}
+                <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
+                <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+              {% else %}
               <a href="{% url 'create_listing' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Create Listing</a>
               <a href="{% url 'register' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Sign Up</a>
               <a href="{% url 'login' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Login</a>
+              {% endif %}
             </div>
           </details>
         </div>
@@ -81,25 +87,6 @@
             </span>
             <span class="hidden text-2xl font-bold tracking-tight md:inline">Alli-Trade</span>
           </a>
-
-          <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
-            <div class="relative group">
-              <button class="flex items-center gap-1 hover:text-slate-600">
-                Categories
-                <span class="text-xs">▼</span>
-              </button>
-
-              <div class="absolute left-0 top-full z-40 mt-2 hidden w-56 rounded-xl border bg-white p-2 shadow-lg group-hover:block">
-                {% for category in categories %}
-                  <a href="#" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
-                    {{ category.name }}
-                  </a>
-                {% endfor %}
-              </div>
-            </div>
-
-            <a href="#" class="hover:text-slate-600">Create Listing</a>
-          </nav>
         </div>
 
         <div class="hidden md:flex md:flex-1 md:justify-center">
@@ -119,12 +106,43 @@
           </form>
         </div>
 
-        <div class="flex items-center gap-6">
-          {% if request.user.is_authenticated %} {# TODO #}
-            <a href="{% url 'chat' %}" class="text-sm font-medium hover:text-slate-600">Chat</a>
-            <a href="{% url 'account' %}" class="text-sm font-medium hover:text-slate-600">Account</a>
+        <div class="hidden items-center gap-6 md:flex">
+          <div class="relative group">
+            <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+              Browse
+              <span class="text-xs">▼</span>
+            </button>
+
+            <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+              <div class="rounded-xl border bg-white p-2 shadow-lg">
+                {% for category in categories %}
+                  <a href="{% url 'category_listings' category.category_id %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                    {{ category.category_name }}
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          {% if request.user.is_authenticated %}
+          <div class="hidden items-center gap-6 md:flex">
+            <div class="relative group">
+              <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+                Account
+                <span class="text-xs">▼</span>
+              </button>
+
+              <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+                <div class="rounded-xl border bg-white p-2 shadow-lg">
+                    <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
+                    <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                    <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+                </div>
+              </div>
+          </div>
           {% else %}
-            <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Sign Up</a>
+            <a href="{% url 'create_listing'}" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
+            <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Login/Signup</a>
           {% endif %}
         </div>
       </div>
@@ -138,9 +156,6 @@
       <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
         <p>© {% now "Y" %} Alli-Trade</p>
         <nav class="flex flex-wrap gap-4">
-          {% if request.user.is_authenticated %} {# TODO #}
-          <a href="#" class="hover:text-slate-900">Account</a>
-          {% endif %}
           <a href="{% url 'marketplace_home' %}" class="hover:text-slate-900">Home</a>
           <a href="{% url 'about' %}" class="hover:text-slate-900">About</a>
         </nav>
