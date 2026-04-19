@@ -33,6 +33,10 @@ def marketplace_home(request):
     context = base_context()
     context.update({
         "recent_listings": Listing.objects.select_related("category", "seller").order_by("-created_at")[:8],
+        "popular_services": Listing.objects.select_related("category", "seller")
+            .filter(listing_type="service", intent="for_sale")
+            .exclude(description__exact="")
+            .order_by("-created_at")[:4],
         "user": _get_logged_in_user(request),
     })
     return render(request, "marketplace/home.html", context)
@@ -138,21 +142,6 @@ def _parse_category_ids(raw_category_ids):
         except (TypeError, ValueError):
             continue
     return category_ids
-
-
-def marketplace_home(request):
-    recent_listings = Listing.objects.select_related('category').order_by('-created_at')[:4]
-    context = _marketplace_context(
-        recent_listings=recent_listings,
-    )
-    return render(request, "marketplace/home.html", context)
-
-
-
-
-
-    return render(request, "marketplace/register.html", base_context())
-
 
 def logout_view(request):
     request.session.flush()
