@@ -74,7 +74,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'marketplace.context_processors.marketplace_globals',
             ],
         },
     },
@@ -146,3 +145,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# Django Auth settings
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "marketplace_home"
+LOGOUT_REDIRECT_URL = "marketplace_home"

@@ -4,13 +4,196 @@ register.html
  page of the "marketplace" app. It extends the base template and 
  includes a form for users to create a new account.
  Created by Subreet Singh on 04-09-2026
+ Implemented by Nicholas Blackson on 04-21-2026
 -->
 {% extends "base.html" %}
 
 {% block title %}Register | Alli-Trade{% endblock %}
 
 {% block content %}
-<!--
-add code for registration form
--->
+<main class="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center px-6 py-10">
+    <section class="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
+
+        <div class="mb-6 text-center">
+            <h1 class="text-3xl font-bold tracking-tight">Create an account</h1>
+            <p class="mt-2 text-sm text-slate-600">Join the Alli-Trade marketplace</p>
+        </div>
+
+        <form method="POST" action="{% url 'register' %}" class="space-y-5">
+            {% csrf_token %}
+
+            <!-- USERNAME -->
+            <div>
+                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Username</label>
+                <input id="username" name="username" type="text" required
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+            </div>
+
+            <!-- EMAIL -->
+            <div>
+                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                    Email
+                </label>
+
+                <input id="email" name="email" type="email" required
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+
+                <p id="emailHint" class="mt-1 hidden text-xs text-red-500">
+                    Email must end in @sfsu.edu
+                </p>
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="relative">
+                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Password</label>
+
+                <input id="password1" name="password1" type="password" required
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+
+                <!-- DROPDOWN REQUIREMENTS -->
+                <div id="passwordRules"
+                    class="absolute z-10 mt-2 hidden w-full rounded-lg border bg-white p-3 text-xs shadow-md">
+
+                    <p class="mb-2 font-semibold text-slate-700">Password must contain:</p>
+
+                    <ul class="space-y-1">
+                        <li id="rule-length">• At least 8 characters</li>
+                        <li id="rule-upper">• 1 uppercase letter</li>
+                        <li id="rule-number">• 1 number</li>
+                        <li id="rule-special">• 1 special character</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CONFIRM PASSWORD -->
+            <div>
+                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Confirm Password</label>
+                <input id="password2" name="password2" type="password" required
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+            </div>
+
+            <button id="submitBtn" type="submit" disabled
+                class="w-full rounded-lg bg-slate-400 px-4 py-2 text-sm font-semibold text-white cursor-not-allowed">
+                Register
+            </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-slate-600">
+            Already have an account?
+            <a href="{% url 'login' %}" class="font-semibold text-slate-900 hover:underline">Log in</a>
+        </p>
+
+    </section>
+</main>
+
+<!-- ========================= -->
+<!-- LIVE VALIDATION SCRIPT -->
+<!-- ========================= -->
+<script>
+const password = document.getElementById("password1");
+const rulesBox = document.getElementById("passwordRules");
+
+const email = document.getElementById("email");
+const emailHint = document.getElementById("emailHint");
+
+const submitBtn = document.getElementById("submitBtn");
+
+const ruleLength = document.getElementById("rule-length");
+const ruleUpper = document.getElementById("rule-upper");
+const ruleNumber = document.getElementById("rule-number");
+const ruleSpecial = document.getElementById("rule-special");
+
+// -------------------------
+// PASSWORD RULES UI
+// -------------------------
+password.addEventListener("focus", () => {
+    rulesBox.classList.remove("hidden");
+});
+
+password.addEventListener("blur", () => {
+    setTimeout(() => {
+        if (!password.matches(":focus")) {
+            rulesBox.classList.add("hidden");
+        }
+    }, 150);
+});
+
+// -------------------------
+// LIVE VALIDATION ENGINE
+// -------------------------
+function validatePassword() {
+    const val = password.value;
+
+    const hasLength = val.length >= 8;
+    const hasUpper = /[A-Z]/.test(val);
+    const hasNumber = /\d/.test(val);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-\/\\[\]]/.test(val);
+
+    updateRule(ruleLength, hasLength);
+    updateRule(ruleUpper, hasUpper);
+    updateRule(ruleNumber, hasNumber);
+    updateRule(ruleSpecial, hasSpecial);
+
+    return hasLength && hasUpper && hasNumber && hasSpecial;
+}
+
+// -------------------------
+// EMAIL VALIDATION
+// -------------------------
+function validateEmail() {
+    const val = email.value.trim();
+    const valid = val.endsWith("@sfsu.edu");
+
+    if (val.length > 0 && !valid) {
+        emailHint.classList.remove("hidden");
+        email.style.borderColor = "#ef4444";
+    } else {
+        emailHint.classList.add("hidden");
+        email.style.borderColor = "#d1d5db";
+    }
+
+    return valid;
+}
+
+// -------------------------
+// BUTTON STATE CONTROL
+// -------------------------
+function updateSubmitState() {
+    const emailValid = validateEmail();
+    const passwordValid = validatePassword();
+
+    if (emailValid && passwordValid) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("bg-slate-400", "cursor-not-allowed");
+        submitBtn.classList.add("bg-slate-900", "hover:bg-slate-700");
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("bg-slate-400", "cursor-not-allowed");
+        submitBtn.classList.remove("bg-slate-900", "hover:bg-slate-700");
+    }
+}
+
+// -------------------------
+// INPUT EVENTS
+// -------------------------
+password.addEventListener("input", updateSubmitState);
+email.addEventListener("input", updateSubmitState);
+
+// -------------------------
+// UI HELPER
+// -------------------------
+function updateRule(el, valid) {
+    if (valid) {
+        el.style.textDecoration = "line-through";
+        el.style.color = "#16a34a";
+    } else {
+        el.style.textDecoration = "none";
+        el.style.color = "#374151";
+    }
+}
+
+// initialize on load
+updateSubmitState();
+</script>
+
 {% endblock %}
