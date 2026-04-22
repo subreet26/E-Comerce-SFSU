@@ -38,6 +38,19 @@ edit_listing.html
     </div>
   </div>
 
+  <!-- Flash messages -->
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-lg px-4 py-3 text-sm
+          {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+          {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <!-- Form Card -->
   <div class="rounded-2xl border bg-white shadow-sm overflow-hidden">
     <form method="post" enctype="multipart/form-data" class="divide-y divide-slate-100">
@@ -53,14 +66,14 @@ edit_listing.html
             <img id="image-preview"
                  src="{{ listing.main_picture_url }}"
                  class="max-h-48 rounded-lg object-cover shadow" alt="Current listing image">
-            <p class="text-xs text-slate-500 mt-1">Click to replace image</p>
+            <p class="text-xs text-slate-500 mt-1">Click or drag to replace image</p>
           {% else %}
             <div id="upload-icon">
               <svg class="mx-auto h-12 w-12 text-slate-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload an image</p>
-              <p class="text-xs text-slate-400">PNG, JPG, GIF up to 10MB</p>
+              <p class="text-xs text-slate-400">PNG, JPG up to 10MB</p>
             </div>
             <img id="image-preview" class="hidden max-h-48 rounded-lg object-cover shadow" alt="Preview">
           {% endif %}
@@ -114,7 +127,7 @@ edit_listing.html
           </div>
         </div>
 
-        <!-- Type + Status -->
+        <!-- Type + Intent -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="listing_type" class="block text-sm font-medium text-slate-700 mb-1">Listing Type <span class="text-red-500">*</span></label>
@@ -127,11 +140,12 @@ edit_listing.html
             </select>
           </div>
           <div>
-            <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Status <span class="text-red-500">*</span></label>
+            <!-- Intent: for_sale or wanted — stored in listing.intent (db column: status) -->
+            <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Intent <span class="text-red-500">*</span></label>
             <select id="status" name="status" required
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-              <option value="" disabled>Select status</option>
-              {% for value, label in listing_statuses %}
+              <option value="" disabled>Select intent</option>
+              {% for value, label in listing_intents %}
                 <option value="{{ value }}" {% if listing.intent == value %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
@@ -145,6 +159,7 @@ edit_listing.html
             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
             <option value="" disabled>Select condition</option>
             {% for value, label in conditions %}
+              {# value is lowercase (e.g. "like_new"), listing.condition stores lowercase too #}
               <option value="{{ value }}" {% if listing.condition == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>

@@ -24,6 +24,19 @@ create_listing.html
     <p class="mt-1 text-slate-500">Fill in the details below to publish your listing to the SFSU community.</p>
   </div>
 
+  <!-- Flash messages -->
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-lg px-4 py-3 text-sm
+          {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+          {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <!-- Form Card -->
   <div class="rounded-2xl border bg-white shadow-sm overflow-hidden">
     <form method="post" enctype="multipart/form-data" class="divide-y divide-slate-100">
@@ -40,7 +53,7 @@ create_listing.html
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload an image</p>
-            <p class="text-xs text-slate-400">PNG, JPG, GIF up to 10MB</p>
+            <p class="text-xs text-slate-400">PNG, JPG up to 10MB</p>
           </div>
           <img id="image-preview" class="hidden max-h-48 rounded-lg object-cover shadow" alt="Preview">
         </div>
@@ -55,6 +68,7 @@ create_listing.html
           <label for="title" class="block text-sm font-medium text-slate-700 mb-1">Title <span class="text-red-500">*</span></label>
           <input
             type="text" id="title" name="title"
+            value="{{ form.title|default:'' }}"
             placeholder="e.g. Calculus Textbook 9th Edition"
             required maxlength="200"
             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition"
@@ -68,7 +82,7 @@ create_listing.html
             id="description" name="description" rows="4"
             placeholder="Describe your item — condition, features, reason for selling…"
             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition resize-none"
-          ></textarea>
+          >{{ form.description|default:'' }}</textarea>
         </div>
 
         <!-- Price + Category -->
@@ -77,7 +91,9 @@ create_listing.html
             <label for="price" class="block text-sm font-medium text-slate-700 mb-1">Price ($) <span class="text-red-500">*</span></label>
             <div class="relative">
               <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">$</span>
-              <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" required
+              <input type="number" id="price" name="price" min="0" step="0.01"
+                value="{{ form.price|default:'' }}"
+                placeholder="0.00" required
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
             </div>
           </div>
@@ -87,13 +103,16 @@ create_listing.html
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
               <option value="" disabled selected>Select a category</option>
               {% for cat in categories %}
-                <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+                <option value="{{ cat.category_id }}"
+                  {% if form.category == cat.category_id|stringformat:"s" %}selected{% endif %}>
+                  {{ cat.category_name }}
+                </option>
               {% endfor %}
             </select>
           </div>
         </div>
 
-        <!-- Type + Status -->
+        <!-- Type + Intent -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="listing_type" class="block text-sm font-medium text-slate-700 mb-1">Listing Type <span class="text-red-500">*</span></label>
@@ -101,17 +120,24 @@ create_listing.html
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
               <option value="" disabled selected>Select type</option>
               {% for value, label in listing_types %}
-                <option value="{{ value }}">{{ label }}</option>
+                <option value="{{ value }}"
+                  {% if form.listing_type == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
               {% endfor %}
             </select>
           </div>
           <div>
-            <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Status <span class="text-red-500">*</span></label>
+            <!-- Intent: for_sale or wanted — stored in listing.intent (db column: status) -->
+            <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Intent <span class="text-red-500">*</span></label>
             <select id="status" name="status" required
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-              <option value="" disabled selected>Select status</option>
-              {% for value, label in listing_statuses %}
-                <option value="{{ value }}">{{ label }}</option>
+              <option value="" disabled selected>Select intent</option>
+              {% for value, label in listing_intents %}
+                <option value="{{ value }}"
+                  {% if form.status == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
               {% endfor %}
             </select>
           </div>
@@ -124,7 +150,10 @@ create_listing.html
             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
             <option value="" disabled selected>Select condition</option>
             {% for value, label in conditions %}
-              <option value="{{ value }}">{{ label }}</option>
+              <option value="{{ value }}"
+                {% if form.condition == value %}selected{% endif %}>
+                {{ label }}
+              </option>
             {% endfor %}
           </select>
         </div>

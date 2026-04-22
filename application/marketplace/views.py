@@ -18,10 +18,6 @@ CONDITION_CHOICES = [
     ("poor", "Poor"),
 ]
 
-STATUS_CHOICES = [
-    ("active", "Active"),
-    ("inactive", "Inactive"),
-]
 
 def base_context():
     return {
@@ -278,7 +274,7 @@ def create_listing_view(request):
         ctx.update({
             "user": user,
             "listing_types": ListingType.choices,
-            "listing_statuses": STATUS_CHOICES,
+            "listing_intents": ListingIntent.choices,
             "conditions": CONDITION_CHOICES,
             "form": post or {},
         })
