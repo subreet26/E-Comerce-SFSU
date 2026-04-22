@@ -51,7 +51,7 @@ Created by Subreet Singh on 04-09-2026
             </div>
 :            <h3 class="text-lg font-semibold">{{ listing.title }}</h3>
             <p class="mt-2 text-xl font-bold">${{ listing.price }}</p>
-            <a href="#" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
+            <a href="{% url 'listing_detail' listing.listing_id %}" class="mt-4 inline-block text-sm font-semibold text-slate-600 hover:text-slate-900">
               View Listing →
             </a>
           </div>
