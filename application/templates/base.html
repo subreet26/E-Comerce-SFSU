@@ -43,8 +43,11 @@
                 value="{{ query }}"
                 class="min-w-0 w-full bg-transparent text-sm outline-none"
               />
-              <button type="submit" class="ml-2 shrink-0 border-l border-slate-300 pl-3 text-sm font-semibold text-slate-700">
-                Search
+              <button type="submit" class="ml-2 shrink-0 border-l border-slate-300 pl-3 text-slate-700 hover:text-slate-900" aria-label="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
               </button>
             </div>
           </form>
@@ -85,13 +88,16 @@
                 </g>
               </svg>
             </span>
-            <span class="hidden text-2xl font-bold tracking-tight md:inline">Alli-Trade</span>
+            <span class="hidden md:block">
+              <span class="block text-2xl font-bold tracking-tight text-slate-900">Alli-Trade</span>
+              <span class="block text-xs font-medium uppercase tracking-[0.10em] text-violet-700">Student-powered SFSU marketplace</span>
+            </span>
           </a>
         </div>
 
         <div class="hidden md:flex md:flex-1 md:justify-center">
           <form method="GET" action="{% url 'search_results' %}" class="w-full max-w-xl">
-            <div class="flex rounded-full border bg-slate-50 px-4 py-2">
+            <div class="flex items-center rounded-full border bg-slate-50 px-4 py-2">
               <input
                 type="text"
                 name="q"
@@ -99,8 +105,11 @@
                 value="{{ query }}"
                 class="w-full bg-transparent text-sm outline-none"
               />
-              <button type="submit" class="ml-3 border-l border-slate-300 pl-3 text-sm font-semibold text-slate-700">
-                Search
+              <button type="submit" class="ml-3 border-l border-slate-300 pl-3 text-slate-700 hover:text-slate-900" aria-label="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
               </button>
             </div>
           </form>
@@ -120,29 +129,35 @@
                     {{ category.category_name }}
                   </a>
                 {% endfor %}
+                <div class="my-2 border-t"></div>
+                <a href="{% url 'search_results' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">
+                  View all listings
+                </a>
               </div>
             </div>
           </div>
 
           {% if request.user.is_authenticated %}
-          <div class="hidden items-center gap-6 md:flex">
-            <div class="relative group">
-              <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
-                Account
-                <span class="text-xs">▼</span>
-              </button>
+            <div class="hidden items-center gap-6 md:flex">
+              <div class="relative group">
+                <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+                  Account
+                  <span class="text-xs">▼</span>
+                </button>
 
-              <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
-                <div class="rounded-xl border bg-white p-2 shadow-lg">
+                <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+                  <div class="rounded-xl border bg-white p-2 shadow-lg">
                     <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
                     <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
                     <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+                  </div>
                 </div>
               </div>
-          </div>
+            </div>
           {% else %}
-            <a href="{% url 'create_listing'}" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
+            <a href="{% url 'create_listing' %}" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
             <a href="{% url 'login' %}" class="text-sm font-medium hover:text-slate-600">Login</a>
+            <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Sign Up</a>
           {% endif %}
         </div>
       </div>
@@ -154,9 +169,10 @@
     {% block footer %}
     <footer class="border-t bg-white">
       <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-        <p>© {% now "Y" %} Alli-Trade</p>
+        <p class="font-medium text-slate-700">© {% now "Y" %} Alli-Trade · Built for the SFSU community</p>
         <nav class="flex flex-wrap gap-4">
           <a href="{% url 'marketplace_home' %}" class="hover:text-slate-900">Home</a>
+          <a href="{% url 'search_results' %}" class="hover:text-slate-900">Browse</a>
           <a href="{% url 'about' %}" class="hover:text-slate-900">About</a>
         </nav>
       </div>

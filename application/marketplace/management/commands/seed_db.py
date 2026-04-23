@@ -16,6 +16,8 @@ CATEGORIES = [
     ("Other", "Other items"),
 ]
 
+INTENT_MAP = {"active": "for_sale", "inactive": "wanted"}
+
 SEED_LISTINGS = [
     # Textbooks
     {
@@ -174,7 +176,7 @@ class Command(BaseCommand):
                 price=data["price"],
                 listing_type=data["listing_type"],
                 condition=data["condition"],
-                status=data["status"],
+                intent=INTENT_MAP.get(data["status"], "for_sale"),
                 category=cat_map[data["category"]],
                 seller=seller,
             )

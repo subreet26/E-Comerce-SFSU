@@ -12,6 +12,13 @@ from backend.models import Category, Listing, ListingIntent, ListingType, User, 
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegisterForm
 
+CONDITION_CHOICES = [
+    ("new", "New"),
+    ("like_new", "Like New"),
+    ("good", "Good"),
+    ("fair", "Fair"),
+    ("poor", "Poor"),
+]
 
 
 def base_context():
@@ -35,7 +42,11 @@ def marketplace_home(request):
     context = base_context()
     context.update({
         "recent_listings": Listing.objects.select_related("category", "seller").order_by("-created_at")[:8],
-        "user": request.user,
+        "popular_services": Listing.objects.select_related("category", "seller")
+            .filter(listing_type="service", intent="for_sale")
+            .exclude(description__exact="")
+            .order_by("-created_at")[:4],
+        "user": _get_logged_in_user(request),
     })
     return render(request, "marketplace/home.html", context)
 
@@ -209,20 +220,34 @@ def create_listing_view(request):
         messages.error(request, "You must be logged in to create a listing.")
         return redirect("login")
 
+    def _create_form_context(post=None):
+        ctx = base_context()
+        ctx.update({
+            "user": user,
+            "listing_types": ListingType.choices,
+            "listing_intents": ListingIntent.choices,
+            "conditions": CONDITION_CHOICES,
+            "form": post or {},
+        })
+        return ctx
+
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
         description = request.POST.get("description", "").strip()
         price = request.POST.get("price", "0")
-        listing_type = request.POST.get("listing_type", "product")
-        condition = request.POST.get("condition", "Good")
+        listing_type = request.POST.get("listing_type", ListingType.PRODUCT)
+        status = request.POST.get("status", "active")
+        condition = request.POST.get("condition", "good")
         category_id = request.POST.get("category", "")
         thumbnail_url = request.POST.get("thumbnail_url", "").strip()
 
         if not title:
             messages.error(request, "Title is required.")
-            context = base_context()
-            context["user"] = user
-            return render(request, "marketplace/create_listing.html", context)
+            return render(request, "marketplace/create_listing.html", _create_form_context(request.POST))
+
+        if listing_type not in ListingType.values:
+            messages.error(request, "Invalid listing type.")
+            return render(request, "marketplace/create_listing.html", _create_form_context(request.POST))
 
         try:
             price_val = round(float(price), 2)
@@ -242,15 +267,16 @@ def create_listing_view(request):
             condition=condition,
             category=cat,
             seller=user,
-            status="active",
+            intent=status,
             thumbnail_url=thumbnail_url or None,
         )
+        listing.save()
         messages.success(request, "Listing created!")
         return redirect("listing_detail", listing_id=listing.listing_id)
 
     context = base_context()
     context["user"] = user
-    return render(request, "marketplace/create_listing.html", context)
+    return render(request, "marketplace/create_listing.html", _create_form_context())
 
 
 def category_listings_view(request, category_id):
@@ -297,7 +323,13 @@ def edit_listing_view(request, listing_id):
         return redirect("listing_detail", listing_id=listing.listing_id)
 
     context = base_context()
-    context.update({"listing": listing, "user": user})
+    context.update({
+        "listing": listing,
+        "user": user,
+        "listing_types": ListingType.choices,
+        "listing_intents": ListingIntent.choices,
+        "conditions": CONDITION_CHOICES,
+    })
     return render(request, "marketplace/edit_listing.html", context)
 
 
@@ -331,6 +363,12 @@ def account_view(request):
         "unread_count": unread_count,
     })
     return render(request, "marketplace/account.html", context)
+
+def verify_student(request):
+    pass
+
+def edit_profile(request):
+    pass
 
 
 # --- Messaging ---
