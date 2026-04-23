@@ -325,7 +325,7 @@ def create_listing_view(request):
 
     context = base_context()
     context["user"] = user
-    return render(request, "marketplace/create_listing.html", context)
+    return render(request, "marketplace/create_listing.html", _create_form_context())
 
 
 def category_listings_view(request, category_id):
