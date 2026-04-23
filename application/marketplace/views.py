@@ -4,11 +4,13 @@
 
 from decimal import Decimal, InvalidOperation
 
-from django.shortcuts import render, get_object_or_404, redirect, render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from backend.models import Category, Listing, ListingIntent, ListingType, User, Role, Message
+from django.contrib.auth import login, authenticate, logout
+from .forms import RegisterForm
 
 CONDITION_CHOICES = [
     ("new", "New"),
@@ -53,79 +55,38 @@ def marketplace_home(request):
 
 def login_view(request):
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
-        password = request.POST.get("password", "")
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
-        try:
-            user = User.objects.get(sfsu_email=email)
-        except User.DoesNotExist:
-            messages.error(request, "Invalid email or password.")
-            return render(request, "marketplace/login.html", base_context())
+        user = authenticate(request, username=username, password=password)
 
-        if not user.check_password(password):
-            messages.error(request, "Invalid email or password.")
-            return render(request, "marketplace/login.html", base_context())
+        if user is not None:
+            login(request, user)
+            return redirect(request.GET.get("next") or "marketplace_home")
 
-        if user.account_status != "active":
-            messages.error(request, "Your account is not active.")
-            return render(request, "marketplace/login.html", base_context())
+        messages.error(request, "Invalid username or password.")
 
-        # Store user in session
-        request.session["user_id"] = user.user_id
-        request.session["user_email"] = user.sfsu_email
-        request.session["user_name"] = f"{user.first_name} {user.last_name}"
-        return redirect("marketplace_home")
-
-    return render(request, "marketplace/login.html", base_context())
+    return render(request, "marketplace/login.html")
 
 
 def register_view(request):
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
-        first_name = request.POST.get("first_name", "").strip()
-        last_name = request.POST.get("last_name", "").strip()
-        password = request.POST.get("password", "")
-        confirm_password = request.POST.get("confirm_password", "")
+        form = RegisterForm(request.POST)
 
-        # Validate SFSU email
-        if not email.endswith("@sfsu.edu"):
-            messages.error(request, "You must use an @sfsu.edu email address.")
-            return render(request, "marketplace/register.html", base_context())
+        if form.is_valid():
+            user = form.save()  # password automatically hashed
 
-        if not first_name or not last_name:
-            messages.error(request, "First and last name are required.")
-            return render(request, "marketplace/register.html", base_context())
+            login(request, user)  # auto-login after registration
+            messages.success(request, "Account created successfully!")
 
-        if len(password) < 8:
-            messages.error(request, "Password must be at least 8 characters.")
-            return render(request, "marketplace/register.html", base_context())
+            return redirect("marketplace_home")
 
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match.")
-            return render(request, "marketplace/register.html", base_context())
+    else:
+        form = RegisterForm()
 
-        if User.objects.filter(sfsu_email=email).exists():
-            messages.error(request, "An account with this email already exists.")
-            return render(request, "marketplace/register.html", base_context())
-
-        # Create the user
-        student_role, _ = Role.objects.get_or_create(role_name="student")
-        user = User(
-            sfsu_email=email,
-            first_name=first_name,
-            last_name=last_name,
-            role=student_role,
-            account_status="active",
-        )
-        user.set_password(password)
-        user.save()
-
-        # Auto-login after registration
-        request.session["user_id"] = user.user_id
-        request.session["user_email"] = user.sfsu_email
-        request.session["user_name"] = f"{user.first_name} {user.last_name}"
-        messages.success(request, "Account created successfully!")
-        return redirect("marketplace_home")
+    return render(request, "marketplace/register.html", {
+        "form": form
+    })
 
 
 def _marketplace_context(**extra_context):
@@ -150,8 +111,9 @@ def _parse_category_ids(raw_category_ids):
             continue
     return category_ids
 
+
 def logout_view(request):
-    request.session.flush()
+    logout(request)
     return redirect("marketplace_home")
 
 
@@ -242,7 +204,7 @@ def search_results_view(request):
         "category": category,
         "categories": db_categories,
         "results_count": total_count,
-        "user": _get_logged_in_user(request),
+        "user": request.user,
         "intent": intent,
         "selected_category_ids": [str(category_id) for category_id in selected_category_ids],
         "price_min": price_min,
@@ -253,8 +215,8 @@ def search_results_view(request):
 # --- Listing CRUD ---
 
 def create_listing_view(request):
-    user = _get_logged_in_user(request)
-    if not user:
+    user = request.user
+    if not request.user.is_authenticated:
         messages.error(request, "You must be logged in to create a listing.")
         return redirect("login")
 
@@ -330,8 +292,8 @@ def category_listings_view(request, category_id):
 
 
 def edit_listing_view(request, listing_id):
-    user = _get_logged_in_user(request)
-    if not user:
+    user = request.user
+    if not request.user.is_authenticated:
         return redirect("login")
 
     listing = get_object_or_404(Listing, listing_id=listing_id, seller=user)
@@ -379,7 +341,7 @@ def listing_detail_view(request, listing_id):
     context = base_context()
     context.update({
         "listing": listing,
-        "user": _get_logged_in_user(request),
+        "user": request.user,
     })
     return render(request, "marketplace/listing_detail.html", context)
 
@@ -387,10 +349,9 @@ def listing_detail_view(request, listing_id):
 # --- Dashboard/Account ---
 
 def account_view(request):
-    user = _get_logged_in_user(request)
-    # TODO uncomment when done testing account
-    # if not user: 
-    #     return redirect("login")
+    user = request.user
+    if not request.user.is_authenticated:
+        return redirect("login")
 
     user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
     unread_count = Message.objects.filter(receiver=user, is_read=False).count()
@@ -413,8 +374,8 @@ def edit_profile(request):
 # --- Messaging ---
 
 def chat_view(request):
-    user = _get_logged_in_user(request)
-    if not user:
+    user = request.user
+    if not request.user.is_authenticated:
         return redirect("login")
 
     # Get all conversations (unique users this user has messaged with)
@@ -464,8 +425,8 @@ def chat_view(request):
 
 def send_message_view(request, listing_id):
     """Start a conversation about a listing (from listing detail page)."""
-    user = _get_logged_in_user(request)
-    if not user:
+    user = request.user
+    if not request.user.is_authenticated:
         return redirect("login")
 
     listing = get_object_or_404(Listing, listing_id=listing_id)
