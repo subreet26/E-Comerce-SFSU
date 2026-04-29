@@ -22,25 +22,39 @@ register.html
         <form method="POST" action="{% url 'register' %}" class="space-y-5">
             {% csrf_token %}
 
+            {% if form.non_field_errors %}
+            <div class="rounded-lg border border-red-300 bg-red-50 p-3">
+                {% for error in form.non_field_errors %}
+                    <p class="text-sm text-red-800">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- USERNAME -->
             <div>
                 <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Username</label>
                 <input id="username" name="username" type="text" required
-                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+                    value="{{ form.username.value|default:'' }}"
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring {% if form.username.errors %}border-red-500{% endif %}" />
+                {% if form.username.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.username.errors.0 }}</p>
+                {% endif %}
             </div>
 
             <!-- EMAIL -->
             <div>
-                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">
-                    Email
-                </label>
+                <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Email</label>
 
                 <input id="email" name="email" type="email" required
-                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+                    value="{{ form.email.value|default:'' }}"
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring {% if form.email.errors %}border-red-500{% endif %}" />
 
                 <p id="emailHint" class="mt-1 hidden text-xs text-red-500">
                     Email must end in @sfsu.edu
                 </p>
+                {% if form.email.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
+                {% endif %}
             </div>
 
             <!-- PASSWORD -->
@@ -48,9 +62,11 @@ register.html
                 <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Password</label>
 
                 <input id="password1" name="password1" type="password" required
-                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring {% if form.password1.errors %}border-red-500{% endif %}" />
+                {% if form.password1.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.password1.errors.0 }}</p>
+                {% endif %}
 
-                <!-- DROPDOWN REQUIREMENTS -->
                 <div id="passwordRules"
                     class="absolute z-10 mt-2 hidden w-full rounded-lg border bg-white p-3 text-xs shadow-md">
 
@@ -58,8 +74,8 @@ register.html
 
                     <ul class="space-y-1">
                         <li id="rule-length">• At least 8 characters</li>
-                        <li id="rule-upper">• 1 uppercase letter</li>
-                        <li id="rule-number">• 1 number</li>
+                        <li id="rule-upper">• 1 uppercase letter (A-Z)</li>
+                        <li id="rule-number">• 1 number (0-9)</li>
                         <li id="rule-special">• 1 special character</li>
                     </ul>
                 </div>
@@ -69,7 +85,14 @@ register.html
             <div>
                 <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Confirm Password</label>
                 <input id="password2" name="password2" type="password" required
-                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring" />
+                    class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring {% if form.password2.errors %}border-red-500{% endif %}" />
+                {% if form.password2.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.password2.errors.0 }}</p>
+                {% endif %}
+
+                <div id="passwordMatch" class="mt-1 hidden">
+                    <p class="text-xs text-red-600">Passwords do not match</p>
+                </div>
             </div>
 
             <button id="submitBtn" type="submit" disabled
@@ -86,15 +109,14 @@ register.html
     </section>
 </main>
 
-<!-- ========================= -->
-<!-- LIVE VALIDATION SCRIPT -->
-<!-- ========================= -->
 <script>
 const password = document.getElementById("password1");
+const password2 = document.getElementById("password2");
 const rulesBox = document.getElementById("passwordRules");
 
 const email = document.getElementById("email");
 const emailHint = document.getElementById("emailHint");
+const username = document.getElementById("username");
 
 const submitBtn = document.getElementById("submitBtn");
 
@@ -103,31 +125,35 @@ const ruleUpper = document.getElementById("rule-upper");
 const ruleNumber = document.getElementById("rule-number");
 const ruleSpecial = document.getElementById("rule-special");
 
-// -------------------------
-// PASSWORD RULES UI
-// -------------------------
-password.addEventListener("focus", () => {
-    rulesBox.classList.remove("hidden");
-});
+// SAFE DJANGO FLAG (fixes your line 271/277 issue)
+const hasServerErrors = "{{ form.errors|yesno:'true,false' }}" === "true";
 
-password.addEventListener("blur", () => {
-    setTimeout(() => {
-        if (!password.matches(":focus")) {
-            rulesBox.classList.add("hidden");
-        }
-    }, 150);
-});
+// PASSWORD RULES UI (guarded)
+if (rulesBox) {
+    password.addEventListener("focus", () => {
+        rulesBox.classList.remove("hidden");
+    });
 
-// -------------------------
-// LIVE VALIDATION ENGINE
-// -------------------------
+    password.addEventListener("blur", () => {
+        setTimeout(() => {
+            if (!password.matches(":focus")) {
+                rulesBox.classList.add("hidden");
+            }
+        }, 150);
+    });
+}
+
+function validateUsername() {
+    return username.value.trim().length > 0;
+}
+
 function validatePassword() {
     const val = password.value;
 
     const hasLength = val.length >= 8;
     const hasUpper = /[A-Z]/.test(val);
     const hasNumber = /\d/.test(val);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-\/\\[\]]/.test(val);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-\/\[\]\\]/.test(val);
 
     updateRule(ruleLength, hasLength);
     updateRule(ruleUpper, hasUpper);
@@ -137,9 +163,19 @@ function validatePassword() {
     return hasLength && hasUpper && hasNumber && hasSpecial;
 }
 
-// -------------------------
-// EMAIL VALIDATION
-// -------------------------
+function validatePasswordMatch() {
+    const val2 = password2.value;
+
+    if (val2.length === 0) return false;
+
+    const match = password.value === val2;
+
+    document.getElementById("passwordMatch").classList.toggle("hidden", match);
+
+    return match;
+}
+
+// EMAIL VALIDATION (UNCHANGED as requested)
 function validateEmail() {
     const val = email.value.trim();
     const valid = val.endsWith("@sfsu.edu");
@@ -155,14 +191,20 @@ function validateEmail() {
     return valid;
 }
 
-// -------------------------
-// BUTTON STATE CONTROL
-// -------------------------
 function updateSubmitState() {
+    if (hasServerErrors) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("bg-slate-400", "cursor-not-allowed");
+        submitBtn.classList.add("bg-slate-900", "hover:bg-slate-700");
+        return;
+    }
+
     const emailValid = validateEmail();
     const passwordValid = validatePassword();
+    const passwordsMatch = validatePasswordMatch();
+    const usernameValid = validateUsername();
 
-    if (emailValid && passwordValid) {
+    if (emailValid && passwordValid && passwordsMatch && usernameValid) {
         submitBtn.disabled = false;
         submitBtn.classList.remove("bg-slate-400", "cursor-not-allowed");
         submitBtn.classList.add("bg-slate-900", "hover:bg-slate-700");
@@ -173,26 +215,20 @@ function updateSubmitState() {
     }
 }
 
-// -------------------------
-// INPUT EVENTS
-// -------------------------
-password.addEventListener("input", updateSubmitState);
-email.addEventListener("input", updateSubmitState);
-
-// -------------------------
-// UI HELPER
-// -------------------------
 function updateRule(el, valid) {
-    if (valid) {
-        el.style.textDecoration = "line-through";
-        el.style.color = "#16a34a";
-    } else {
-        el.style.textDecoration = "none";
-        el.style.color = "#374151";
-    }
+    if (!el) return;
+
+    el.style.textDecoration = valid ? "line-through" : "none";
+    el.style.color = valid ? "#16a34a" : "#374151";
 }
 
-// initialize on load
+// EVENTS
+password.addEventListener("input", updateSubmitState);
+password2.addEventListener("input", updateSubmitState);
+email.addEventListener("input", updateSubmitState);
+username.addEventListener("input", updateSubmitState);
+
+// INIT
 updateSubmitState();
 </script>
 

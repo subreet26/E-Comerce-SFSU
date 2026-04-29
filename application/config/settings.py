@@ -151,3 +151,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "marketplace_home"
 LOGOUT_REDIRECT_URL = "marketplace_home"
+
+# Custom authentication backend
+# Allows login via username or email (case-insensitive)
+AUTHENTICATION_BACKENDS = [
+    'marketplace.backends.EmailOrUsernameBackend',
+]

@@ -8,8 +8,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from backend.models import Category, Listing, ListingIntent, ListingType, User, Role, Message
+from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
+from backend.models import Category, Listing, ListingIntent, ListingType, Role, Message
 from .forms import RegisterForm
 
 CONDITION_CHOICES = [
@@ -28,13 +29,10 @@ def base_context():
 
 
 def _get_logged_in_user(request):
-    """Return the User object stored in session, or None."""
-    user_id = request.session.get("user_id")
-    if user_id:
-        try:
-            return User.objects.get(user_id=user_id)
-        except User.DoesNotExist:
-            request.session.flush()
+    """Return the User object from Django's auth session, or None."""
+    # Use request.user which is automatically set by Django's auth system
+    if request.user.is_authenticated:
+        return request.user
     return None
 
 
@@ -54,32 +52,64 @@ def marketplace_home(request):
 # --- Authentication views ---
 
 def login_view(request):
+    """
+    Handle user login via username or email.
+    Uses custom EmailOrUsernameBackend for authentication.
+    Provides specific error messages for debugging.
+    """
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        username_or_email = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
 
-        user = authenticate(request, username=username, password=password)
+        if not username_or_email or not password:
+            messages.error(request, "Please enter both username/email and password.")
+            return render(request, "marketplace/login.html")
+
+        # Check if user exists (by username or email)
+        user_exists = User.objects.filter(
+            Q(username=username_or_email) | Q(email__iexact=username_or_email)
+        ).exists()
+
+        if not user_exists:
+            messages.error(request, "Username or email not found.")
+            return render(request, "marketplace/login.html")
+
+        # Attempt authentication with custom backend
+        user = authenticate(request, username=username_or_email, password=password)
 
         if user is not None:
             login(request, user)
             return redirect(request.GET.get("next") or "marketplace_home")
-
-        messages.error(request, "Invalid username or password.")
+        else:
+            # User exists but password is incorrect
+            messages.error(request, "Incorrect password.")
 
     return render(request, "marketplace/login.html")
 
 
 def register_view(request):
+    """
+    Handle user registration with comprehensive backend validation.
+    Validates username, email (@sfsu.edu domain), and password requirements.
+    Password is hashed using Django's default PBKDF2 hasher.
+    Auto-logs in user after successful registration.
+    """
     if request.method == "POST":
         form = RegisterForm(request.POST)
 
         if form.is_valid():
-            user = form.save()  # password automatically hashed
+            # Save user with hashed password
+            user = form.save(commit=True)
 
-            login(request, user)  # auto-login after registration
+            # Auto-login after registration
+            login(request, user)
             messages.success(request, "Account created successfully!")
 
             return redirect("marketplace_home")
+        else:
+            # Form validation errors will be displayed in template
+            # Errors from RegisterForm include: username uniqueness, email domain, password strength
+            pass
 
     else:
         form = RegisterForm()
