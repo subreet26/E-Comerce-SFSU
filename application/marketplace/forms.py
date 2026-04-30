@@ -46,7 +46,8 @@ class RegisterForm(UserCreationForm):
         if not re.search(r"\d", password):
             raise ValidationError("Password must contain at least 1 number.")
 
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-\\/\\[\\]]", password):
+        special_chars = set('!@#$%^&*(),.?":{}|<>_-\\/[]')
+        if not any(char in special_chars for char in password):
             raise ValidationError("Password must contain at least 1 special character.")
 
         return password
