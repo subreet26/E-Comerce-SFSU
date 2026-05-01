@@ -8,9 +8,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import login, authenticate, logout
-from .models import Category, Listing, ListingIntent, ListingType, Message
+from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User as MarketplaceUser
 from .forms import RegisterForm
 
 CONDITION_CHOICES = [
@@ -36,6 +36,31 @@ def _get_logged_in_user(request):
     return None
 
 
+def get_marketplace_user(auth_user):
+    """Find or create the marketplace User record for a Django auth user."""
+    if not auth_user or not auth_user.is_authenticated:
+        return None
+
+    mp_user = MarketplaceUser.objects.filter(sfsu_email__iexact=auth_user.email).first()
+    if mp_user:
+        return mp_user
+
+    role, _ = Role.objects.get_or_create(role_name='student')
+    email = auth_user.email or f"{auth_user.username}@sfsu.edu"
+    first_name = auth_user.first_name or auth_user.username
+    last_name = auth_user.last_name or ""
+
+    mp_user = MarketplaceUser.objects.create(
+        sfsu_email=email,
+        first_name=first_name,
+        last_name=last_name,
+        role=role,
+        password_hash=auth_user.password,
+        account_status='active',
+    )
+    return mp_user
+
+
 def marketplace_home(request):
     context = base_context()
     context.update({
@@ -57,34 +82,40 @@ def login_view(request):
     Uses custom EmailOrUsernameBackend for authentication.
     Provides specific error messages for debugging.
     """
+    next_page = request.POST.get("next") or request.GET.get("next", "")
+
+    if request.user.is_authenticated:
+        return redirect(next_page or "marketplace_home")
+
     if request.method == "POST":
         username_or_email = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
 
         if not username_or_email or not password:
             messages.error(request, "Please enter both username/email and password.")
-            return render(request, "marketplace/login.html")
+            return render(request, "marketplace/login.html", {"next": next_page})
 
         # Check if user exists (by username or email)
-        user_exists = User.objects.filter(
+        user_exists = AuthUser.objects.filter(
             Q(username=username_or_email) | Q(email__iexact=username_or_email)
         ).exists()
 
         if not user_exists:
             messages.error(request, "Username or email not found.")
-            return render(request, "marketplace/login.html")
+            return render(request, "marketplace/login.html", {"next": next_page})
 
         # Attempt authentication with custom backend
         user = authenticate(request, username=username_or_email, password=password)
 
         if user is not None:
             login(request, user)
-            return redirect(request.GET.get("next") or "marketplace_home")
+            get_marketplace_user(user)
+            return redirect(next_page or "marketplace_home")
         else:
             # User exists but password is incorrect
             messages.error(request, "Incorrect password.")
 
-    return render(request, "marketplace/login.html")
+    return render(request, "marketplace/login.html", {"next": next_page})
 
 
 def register_view(request):
@@ -94,6 +125,11 @@ def register_view(request):
     Password is hashed using Django's default PBKDF2 hasher.
     Auto-logs in user after successful registration.
     """
+    next_page = request.POST.get("next") or request.GET.get("next", "")
+
+    if request.user.is_authenticated:
+        return redirect(next_page or "marketplace_home")
+
     if request.method == "POST":
         form = RegisterForm(request.POST)
 
@@ -101,11 +137,14 @@ def register_view(request):
             # Save user with hashed password
             user = form.save(commit=True)
 
+            # Create/ensure marketplace user record exists
+            get_marketplace_user(user)
+
             # Auto-login after registration
             login(request, user)
             messages.success(request, "Account created successfully!")
 
-            return redirect("marketplace_home")
+            return redirect(next_page or "marketplace_home")
         else:
             # Form validation errors will be displayed in template
             # Errors from RegisterForm include: username uniqueness, email domain, password strength
@@ -115,7 +154,8 @@ def register_view(request):
         form = RegisterForm()
 
     return render(request, "marketplace/register.html", {
-        "form": form
+        "form": form,
+        "next": next_page,
     })
 
 
@@ -261,6 +301,8 @@ def create_listing_view(request):
         })
         return ctx
 
+    market_user = get_marketplace_user(request.user)
+
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
         description = request.POST.get("description", "").strip()
@@ -296,7 +338,7 @@ def create_listing_view(request):
             listing_type=listing_type,
             condition=condition,
             category=cat,
-            seller=user,
+            seller=market_user,
             intent=status,
             thumbnail_url=thumbnail_url or None,
         )
@@ -305,7 +347,7 @@ def create_listing_view(request):
         return redirect("listing_detail", listing_id=listing.listing_id)
 
     context = base_context()
-    context["user"] = user
+    context["user"] = market_user or user
     return render(request, "marketplace/create_listing.html", _create_form_context())
 
 
@@ -326,7 +368,8 @@ def edit_listing_view(request, listing_id):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    listing = get_object_or_404(Listing, listing_id=listing_id, seller=user)
+    market_user = get_marketplace_user(request.user)
+    listing = get_object_or_404(Listing, listing_id=listing_id, seller=market_user)
 
     if request.method == "POST":
         listing.title = request.POST.get("title", listing.title).strip()
@@ -368,10 +411,12 @@ def listing_detail_view(request, listing_id):
         Listing.objects.select_related("category", "seller"),
         listing_id=listing_id
     )
+    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
     context = base_context()
     context.update({
         "listing": listing,
         "user": request.user,
+        "market_user": market_user,
     })
     return render(request, "marketplace/listing_detail.html", context)
 
@@ -379,16 +424,17 @@ def listing_detail_view(request, listing_id):
 # --- Dashboard/Account ---
 
 def account_view(request):
-    user = request.user
     if not request.user.is_authenticated:
         return redirect("login")
 
-    user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
-    unread_count = Message.objects.filter(receiver=user, is_read=False).count()
+    market_user = get_marketplace_user(request.user)
+    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
+    unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
 
     context = base_context()
     context.update({
-        "user": user,
+        "user": request.user,
+        "market_user": market_user,
         "user_listings": user_listings,
         "unread_count": unread_count,
     })
@@ -408,11 +454,13 @@ def chat_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
+    market_user = get_marketplace_user(request.user)
+
     # Get all conversations (unique users this user has messaged with)
-    sent = Message.objects.filter(sender=user).values_list("receiver_id", flat=True)
-    received = Message.objects.filter(receiver=user).values_list("sender_id", flat=True)
+    sent = Message.objects.filter(sender=market_user).values_list("receiver_id", flat=True)
+    received = Message.objects.filter(receiver=market_user).values_list("sender_id", flat=True)
     contact_ids = set(list(sent) + list(received))
-    contacts = User.objects.filter(user_id__in=contact_ids)
+    contacts = MarketplaceUser.objects.filter(pk__in=contact_ids)
 
     # If a specific conversation is selected
     other_user_id = request.GET.get("with")
@@ -421,31 +469,31 @@ def chat_view(request):
 
     if other_user_id:
         try:
-            other_user = User.objects.get(user_id=other_user_id)
+            other_user = MarketplaceUser.objects.get(pk=other_user_id)
             conversation = Message.objects.filter(
-                (Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user))
+                (Q(sender=market_user, receiver=other_user) | Q(sender=other_user, receiver=market_user))
             ).order_by("created_at")
             # Mark messages as read
-            conversation.filter(receiver=user, is_read=False).update(is_read=True)
-        except User.DoesNotExist:
+            conversation.filter(receiver=market_user, is_read=False).update(is_read=True)
+        except MarketplaceUser.DoesNotExist:
             pass
 
     if request.method == "POST" and other_user:
         content = request.POST.get("content", "").strip()
         listing_id = request.POST.get("listing_id")
         if content:
-            msg = Message(sender=user, receiver=other_user, content=content)
+            msg = Message(sender=market_user, receiver=other_user, content=content)
             if listing_id:
                 try:
                     msg.listing = Listing.objects.get(listing_id=listing_id)
                 except Listing.DoesNotExist:
                     pass
             msg.save()
-            return redirect(f"/chat/?with={other_user.user_id}")
+            return redirect(f"/chat/?with={other_user.pk}")
 
     context = base_context()
     context.update({
-        "user": user,
+        "user": market_user,
         "contacts": contacts,
         "conversation": conversation,
         "other_user": other_user,
@@ -460,12 +508,13 @@ def send_message_view(request, listing_id):
         return redirect("login")
 
     listing = get_object_or_404(Listing, listing_id=listing_id)
+    market_user = get_marketplace_user(request.user)
 
     if request.method == "POST":
         content = request.POST.get("content", "").strip()
-        if content and listing.seller != user:
+        if content and listing.seller != market_user:
             Message.objects.create(
-                sender=user,
+                sender=market_user,
                 receiver=listing.seller,
                 listing=listing,
                 content=content,
