@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
-from backend.models import Category, Listing, ListingIntent, ListingType, Role, Message
+from .models import Category, Listing, ListingIntent, ListingType, Message
 from .forms import RegisterForm
 
 CONDITION_CHOICES = [

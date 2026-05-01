@@ -4,7 +4,7 @@
 # CSC 648-848 Spring 2026 - Team 17
 
 from django.core.management.base import BaseCommand
-from backend.models import Role, User, Category, Listing
+from marketplace.models import Role, User, Category, Listing
 
 
 CATEGORIES = [

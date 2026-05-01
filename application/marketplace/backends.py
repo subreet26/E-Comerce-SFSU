@@ -2,8 +2,11 @@
 # Custom authentication backend for username OR email login
 # Created on 04-29-2026
 
-from django.contrib.auth.models import User
-from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.models import User as AuthUser
+from django.contrib.auth.backends import ModelBackend, BaseBackend
+from django.contrib.auth.hashers import check_password
+
+from .models import User
 
 
 class EmailOrUsernameBackend(ModelBackend):
@@ -24,12 +27,12 @@ class EmailOrUsernameBackend(ModelBackend):
 
         try:
             # Try to find user by username first
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
+            user = AuthUser.objects.get(username=username)
+        except AuthUser.DoesNotExist:
             try:
                 # If not found by username, try case-insensitive email lookup
-                user = User.objects.get(email__iexact=username)
-            except User.DoesNotExist:
+                user = AuthUser.objects.get(email__iexact=username)
+            except AuthUser.DoesNotExist:
                 # User doesn't exist
                 return None
 
@@ -41,6 +44,29 @@ class EmailOrUsernameBackend(ModelBackend):
 
     def get_user(self, user_id):
         """Retrieve user by ID for session management."""
+        try:
+            return AuthUser.objects.get(pk=user_id)
+        except AuthUser.DoesNotExist:
+            return None
+
+
+class BackendUserAuth(BaseBackend):
+    """Authenticate against the marketplace User model using email and password hash."""
+
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        if username is None or password is None:
+            return None
+
+        try:
+            user = User.objects.get(sfsu_email=username)
+        except User.DoesNotExist:
+            return None
+
+        if check_password(password, user.password_hash):
+            return user
+        return None
+
+    def get_user(self, user_id):
         try:
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:

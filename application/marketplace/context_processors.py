@@ -1,4 +1,4 @@
-from backend.models import Category
+from .models import Category
 
 def marketplace_globals(request):
     categories = Category.objects.order_by('category_name')
