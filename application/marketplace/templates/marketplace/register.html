@@ -21,6 +21,9 @@ register.html
 
         <form method="POST" action="{% url 'register' %}" class="space-y-5">
             {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}" />
+            {% endif %}
 
             {% if form.non_field_errors %}
             <div class="rounded-lg border border-red-300 bg-red-50 p-3">
@@ -103,7 +106,7 @@ register.html
 
         <p class="mt-6 text-center text-sm text-slate-600">
             Already have an account?
-            <a href="{% url 'login' %}" class="font-semibold text-slate-900 hover:underline">Log in</a>
+            <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="font-semibold text-slate-900 hover:underline">Log in</a>
         </p>
 
     </section>

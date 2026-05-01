@@ -1,8 +1,75 @@
 from django.conf import settings
+from django.contrib.auth.models import User as AuthUser
 from django.db import models
 
-from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import AbstractUser
+
+
+class UserProfile(models.Model):
+    profile_id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    avatar_url = models.URLField(max_length=500, blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+    year = models.CharField(max_length=64, blank=True)
+    major = models.CharField(max_length=128, blank=True)
+    bio = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_profile'
+
+    @property
+    def avatar(self):
+        if self.avatar_url:
+            return type('Avatar', (), {'url': self.avatar_url})()
+        return None
+
+    def __str__(self):
+        return f"{self.user.username} profile"
+
+
+def _get_auth_user_profile(auth_user):
+    try:
+        return auth_user.__dict__['_profile']
+    except KeyError:
+        try:
+            profile = UserProfile.objects.get(user=auth_user)
+        except Exception:
+            profile = UserProfile(user=auth_user)
+        auth_user.__dict__['_profile'] = profile
+        return profile
+
+AuthUser.profile = property(_get_auth_user_profile)
+
+
+class MarketplaceUserProfile:
+    def __init__(self, user):
+        self.user = user
+
+    @property
+    def avatar(self):
+        return None
+
+    @property
+    def is_verified(self):
+        return False
+
+    @property
+    def year(self):
+        return None
+
+    @property
+    def major(self):
+        return None
+
+    @property
+    def bio(self):
+        return ''
+
+    def __str__(self):
+        return f"{self.user.sfsu_email} profile"
+
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True, db_column='role_id')
@@ -29,13 +96,21 @@ class User(AbstractUser):
     def __str__(self):
         return self.sfsu_email
 
-    def set_password(self, raw_password):
-        super().set_password(raw_password)
-        self.password_hash = self.password
+    @property
+    def username(self):
+        return self.sfsu_email.split('@')[0]
 
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password) or check_password(raw_password, self.password_hash)
+    @property
+    def email(self):
+        return self.sfsu_email
 
+    def get_full_name(self):
+        full_name = ' '.join([name for name in [self.first_name, self.last_name] if name])
+        return full_name.strip() or self.username
+
+    @property
+    def is_authenticated(self):
+        return True
 
 class Category(models.Model):
     category_id = models.AutoField(primary_key=True, db_column='category_id')
