@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.db import models
 
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import AbstractUser
 
 class Role(models.Model):
     role_id = models.AutoField(primary_key=True, db_column='role_id')
@@ -13,12 +15,9 @@ class Role(models.Model):
         return self.role_name
 
 
-class User(models.Model):
-    user_id = models.AutoField(primary_key=True, db_column='user_id')
+class User(AbstractUser):
     sfsu_email = models.EmailField(max_length=254, unique=True)
-    first_name = models.CharField(max_length=64)
-    last_name = models.CharField(max_length=64)
-    role = models.ForeignKey(Role, on_delete=models.PROTECT, db_column='role_id', related_name='users')
+    role = models.ForeignKey(Role, on_delete=models.PROTECT, db_column='role_id', related_name='users', blank=True, null=True)
     password_hash = models.CharField(max_length=256)
     account_status = models.CharField(max_length=32, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,12 +30,11 @@ class User(models.Model):
         return self.sfsu_email
 
     def set_password(self, raw_password):
-        """Hash and store the password using Django's built-in PBKDF2 hasher."""
-        self.password_hash = make_password(raw_password)
+        super().set_password(raw_password)
+        self.password_hash = self.password
 
     def check_password(self, raw_password):
-        """Verify a raw password against the stored hash."""
-        return check_password(raw_password, self.password_hash)
+        return check_password(raw_password, self.password) or check_password(raw_password, self.password_hash)
 
 
 class Category(models.Model):
@@ -76,15 +74,14 @@ class Listing(models.Model):
     intent = models.CharField(max_length=32, choices=ListingIntent.choices, db_column='status')
     condition = models.CharField(max_length=64, blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, db_column='category_id', related_name='listings')
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, db_column='seller_id', related_name='listings', blank=True, null=True)
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='seller_id', related_name='listings', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=200)
-    condition = models.CharField(max_length=64)
 
     class Meta:
         db_table = 'listing'
-        managed = False
+        managed = True
         ordering = ['-created_at', '-listing_id']
 
     def __str__(self):
@@ -94,8 +91,8 @@ class Listing(models.Model):
 
 class Message(models.Model):
     message_id = models.AutoField(primary_key=True, db_column='message_id')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, db_column='sender_id', related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, db_column='receiver_id', related_name='received_messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='sender_id', related_name='sent_messages')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='receiver_id', related_name='received_messages')
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, db_column='listing_id', related_name='messages', null=True, blank=True)
     content = models.TextField()
     is_read = models.BooleanField(default=False)

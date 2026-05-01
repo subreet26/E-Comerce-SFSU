@@ -8,10 +8,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import get_user_model
 from .models import Category, Listing, ListingIntent, ListingType, Message
 from .forms import RegisterForm
+
+
+User = get_user_model()
 
 CONDITION_CHOICES = [
     ("new", "New"),
@@ -412,7 +415,7 @@ def chat_view(request):
     sent = Message.objects.filter(sender=user).values_list("receiver_id", flat=True)
     received = Message.objects.filter(receiver=user).values_list("sender_id", flat=True)
     contact_ids = set(list(sent) + list(received))
-    contacts = User.objects.filter(user_id__in=contact_ids)
+    contacts = User.objects.filter(id__in=contact_ids)
 
     # If a specific conversation is selected
     other_user_id = request.GET.get("with")
@@ -421,7 +424,7 @@ def chat_view(request):
 
     if other_user_id:
         try:
-            other_user = User.objects.get(user_id=other_user_id)
+            other_user = User.objects.get(id=other_user_id)
             conversation = Message.objects.filter(
                 (Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user))
             ).order_by("created_at")
@@ -441,7 +444,7 @@ def chat_view(request):
                 except Listing.DoesNotExist:
                     pass
             msg.save()
-            return redirect(f"/chat/?with={other_user.user_id}")
+            return redirect(f"/chat/?with={other_user.id}")
 
     context = base_context()
     context.update({

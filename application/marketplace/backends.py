@@ -2,7 +2,6 @@
 # Custom authentication backend for username OR email login
 # Created on 04-29-2026
 
-from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.backends import ModelBackend, BaseBackend
 from django.contrib.auth.hashers import check_password
 
@@ -27,12 +26,12 @@ class EmailOrUsernameBackend(ModelBackend):
 
         try:
             # Try to find user by username first
-            user = AuthUser.objects.get(username=username)
-        except AuthUser.DoesNotExist:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
             try:
                 # If not found by username, try case-insensitive email lookup
-                user = AuthUser.objects.get(email__iexact=username)
-            except AuthUser.DoesNotExist:
+                user = User.objects.get(email__iexact=username)
+            except User.DoesNotExist:
                 # User doesn't exist
                 return None
 
@@ -45,8 +44,8 @@ class EmailOrUsernameBackend(ModelBackend):
     def get_user(self, user_id):
         """Retrieve user by ID for session management."""
         try:
-            return AuthUser.objects.get(pk=user_id)
-        except AuthUser.DoesNotExist:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
             return None
 
 

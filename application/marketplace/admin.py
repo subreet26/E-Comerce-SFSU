@@ -10,7 +10,7 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('user_id', 'sfsu_email', 'first_name', 'last_name', 'role', 'account_status')
+    list_display = ('id', 'sfsu_email', 'first_name', 'last_name', 'role', 'account_status')
     search_fields = ('sfsu_email', 'first_name', 'last_name')
 
 
