@@ -492,7 +492,7 @@ def chat_view(request):
                 except Listing.DoesNotExist:
                     pass
             msg.save()
-            return redirect(f"/chat/?with={other_user.pk}")e/backend-migrate
+            return redirect(f"/chat/?with={other_user.pk}")
 
     context = base_context()
     context.update({

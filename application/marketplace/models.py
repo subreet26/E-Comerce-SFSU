@@ -26,7 +26,7 @@ class UserProfile(models.Model):
         return None
 
     def __str__(self):
-        return f"{self.user.username} profile"
+        return f"{self.user} profile"
 
 
 def _get_auth_user_profile(auth_user):
@@ -96,21 +96,9 @@ class User(AbstractUser):
     def __str__(self):
         return self.sfsu_email
 
-    @property
-    def username(self):
-        return self.sfsu_email.split('@')[0]
-
-    @property
-    def email(self):
-        return self.sfsu_email
-
     def get_full_name(self):
         full_name = ' '.join([name for name in [self.first_name, self.last_name] if name])
         return full_name.strip() or self.username
-
-    @property
-    def is_authenticated(self):
-        return True
 
 class Category(models.Model):
     category_id = models.AutoField(primary_key=True, db_column='category_id')
