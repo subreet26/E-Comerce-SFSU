@@ -31,7 +31,7 @@ account.html
   {% endif %}
 
   <!-- Two-column layout -->
-  <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-stretch">
 
     <!-- LEFT — Profile sidebar -->
     <aside class="w-full lg:w-72 flex-shrink-0">
@@ -97,7 +97,7 @@ account.html
         <hr class="mb-5 border-slate-100">
 
         <!-- Action buttons -->
-        <div class="space-y-2">
+        <div class="mt-auto space-y-2">
           <a href="{% url 'edit_profile' %}"
              class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

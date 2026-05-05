@@ -385,7 +385,7 @@ def edit_profile(request):
 
 def past_listings(request):
     context = base_context()
-    return render(request, "marketplace/edit_profile.html", context)
+    return render(request, "marketplace/past_listings.html", context)
 
 
 
