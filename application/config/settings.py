@@ -93,8 +93,10 @@ DATABASES = {
         'HOST': os.getenv('MYSQL_HOST', '127.0.0.1'),
         'PORT': os.getenv('MYSQL_PORT', '3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            # 'ATOMIC_REQUESTS': True,  # Removed as per patch request
         },
     }
 }
@@ -156,3 +158,6 @@ LOGOUT_REDIRECT_URL = "marketplace_home"
 AUTHENTICATION_BACKENDS = [
     'marketplace.backends.EmailOrUsernameBackend',
 ]
+
+AUTH_USER_MODEL = "marketplace.User"
+

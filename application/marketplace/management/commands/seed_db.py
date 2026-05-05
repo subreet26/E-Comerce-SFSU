@@ -145,6 +145,7 @@ class Command(BaseCommand):
 
         # Create a seed seller user with hashed password
         seller, created = User.objects.get_or_create(
+            username="seed_seller",
             sfsu_email="seed_seller@sfsu.edu",
             defaults={
                 "first_name": "Seed",

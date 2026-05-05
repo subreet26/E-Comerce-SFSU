@@ -8,10 +8,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import login, authenticate, logout
-from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User as MarketplaceUser
+from django.contrib.auth import get_user_model
+from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
+
+
+User = get_user_model()
 
 CONDITION_CHOICES = [
     ("new", "New"),
@@ -41,7 +44,7 @@ def get_marketplace_user(auth_user):
     if not auth_user or not auth_user.is_authenticated:
         return None
 
-    mp_user = MarketplaceUser.objects.filter(sfsu_email__iexact=auth_user.email).first()
+    mp_user = User.objects.filter(sfsu_email__iexact=auth_user.email).first()
     if mp_user:
         return mp_user
 
@@ -50,7 +53,7 @@ def get_marketplace_user(auth_user):
     first_name = auth_user.first_name or auth_user.username
     last_name = auth_user.last_name or ""
 
-    mp_user = MarketplaceUser.objects.create(
+    mp_user = User.objects.create(
         sfsu_email=email,
         first_name=first_name,
         last_name=last_name,
@@ -460,7 +463,7 @@ def chat_view(request):
     sent = Message.objects.filter(sender=market_user).values_list("receiver_id", flat=True)
     received = Message.objects.filter(receiver=market_user).values_list("sender_id", flat=True)
     contact_ids = set(list(sent) + list(received))
-    contacts = MarketplaceUser.objects.filter(pk__in=contact_ids)
+    contacts = User.objects.filter(id__in=contact_ids)
 
     # If a specific conversation is selected
     other_user_id = request.GET.get("with")
@@ -469,13 +472,13 @@ def chat_view(request):
 
     if other_user_id:
         try:
-            other_user = MarketplaceUser.objects.get(pk=other_user_id)
+            other_user = User.objects.get(id=other_user_id)
             conversation = Message.objects.filter(
                 (Q(sender=market_user, receiver=other_user) | Q(sender=other_user, receiver=market_user))
             ).order_by("created_at")
             # Mark messages as read
             conversation.filter(receiver=market_user, is_read=False).update(is_read=True)
-        except MarketplaceUser.DoesNotExist:
+        except User.DoesNotExist:
             pass
 
     if request.method == "POST" and other_user:
