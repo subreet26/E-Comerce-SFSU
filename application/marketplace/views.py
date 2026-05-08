@@ -395,10 +395,17 @@ def account_view(request):
     return render(request, "marketplace/account.html", context)
 
 def verify_student(request):
-    pass
+    context = base_context()
+    return render(request, "marketplace/verify_student.html", context)
 
 def edit_profile(request):
-    pass
+    context = base_context()
+    return render(request, "marketplace/edit_profile.html", context)
+
+def past_listings(request):
+    context = base_context()
+    return render(request, "marketplace/past_listings.html", context)
+
 
 
 # --- Messaging ---
