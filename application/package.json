@@ -1,0 +1,10 @@
+{
+  "name": "csc648-team-project-js-tests",
+  "private": true,
+  "devDependencies": {
+    "jasmine": "^5.7.0"
+  },
+  "scripts": {
+    "test": "jasmine"
+  }
+}
