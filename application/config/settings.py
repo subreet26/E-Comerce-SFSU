@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "pages",
     "marketplace",
-    "backend",
 ]
 
 MIDDLEWARE = [
@@ -74,7 +73,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'marketplace.context_processors.marketplace_globals',
             ],
         },
     },
@@ -95,8 +93,10 @@ DATABASES = {
         'HOST': os.getenv('MYSQL_HOST', '127.0.0.1'),
         'PORT': os.getenv('MYSQL_PORT', '3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            # 'ATOMIC_REQUESTS': True,  # Removed as per patch request
         },
     }
 }
@@ -146,3 +146,18 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# Django Auth settings
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "marketplace_home"
+LOGOUT_REDIRECT_URL = "marketplace_home"
+
+# Custom authentication backend
+# Allows login via username or email (case-insensitive)
+AUTHENTICATION_BACKENDS = [
+    'marketplace.backends.EmailOrUsernameBackend',
+]
+
+AUTH_USER_MODEL = "marketplace.User"
+

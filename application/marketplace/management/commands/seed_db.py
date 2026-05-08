@@ -4,7 +4,7 @@
 # CSC 648-848 Spring 2026 - Team 17
 
 from django.core.management.base import BaseCommand
-from backend.models import Role, User, Category, Listing
+from marketplace.models import Role, User, Category, Listing
 
 
 CATEGORIES = [
@@ -15,6 +15,8 @@ CATEGORIES = [
     ("Services", "Student services and tutoring"),
     ("Other", "Other items"),
 ]
+
+INTENT_MAP = {"active": "for_sale", "inactive": "wanted"}
 
 SEED_LISTINGS = [
     # Textbooks
@@ -143,6 +145,7 @@ class Command(BaseCommand):
 
         # Create a seed seller user with hashed password
         seller, created = User.objects.get_or_create(
+            username="seed_seller",
             sfsu_email="seed_seller@sfsu.edu",
             defaults={
                 "first_name": "Seed",
@@ -174,7 +177,7 @@ class Command(BaseCommand):
                 price=data["price"],
                 listing_type=data["listing_type"],
                 condition=data["condition"],
-                status=data["status"],
+                intent=INTENT_MAP.get(data["status"], "for_sale"),
                 category=cat_map[data["category"]],
                 seller=seller,
             )
