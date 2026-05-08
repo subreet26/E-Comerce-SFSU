@@ -31,7 +31,7 @@ account.html
   {% endif %}
 
   <!-- Two-column layout -->
-  <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-stretch">
 
     <!-- LEFT — Profile sidebar -->
     <aside class="w-full lg:w-72 flex-shrink-0">
@@ -69,13 +69,6 @@ account.html
               </svg>
               SFSU Verified
             </span>
-          {% else %}
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              </svg>
-              Unverified
-            </span>
           {% endif %}
         </div>
 
@@ -104,7 +97,7 @@ account.html
         <hr class="mb-5 border-slate-100">
 
         <!-- Action buttons -->
-        <div class="space-y-2">
+        <div class="mt-auto space-y-2">
           <a href="{% url 'edit_profile' %}"
              class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -114,18 +107,9 @@ account.html
             Edit Profile
           </a>
 
-          {% if not user.profile.is_verified %}
-          <a href="{% url 'verify_student' %}"
-             class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
-            Verify Student
-          </a>
-          {% endif %}
 
           <a href="{% url 'logout' %}"
-             class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-white px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-50">
+             class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-100">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
@@ -161,21 +145,11 @@ account.html
           <h2 class="text-2xl font-bold tracking-tight">My Listings</h2>
           <a href="{% url 'create_listing' %}"
              class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
-            + New Listing
+            + Create Listing
           </a>
         </div>
 
-        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-
-          <!-- Add new listing tile -->
-          <a href="{% url 'create_listing' %}"
-             class="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-600">
-            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
-            </svg>
-            <span class="text-sm font-semibold">Add Listing</span>
-          </a>
-
+        <div class="flexbox items-center">
           <!-- Existing listings -->
           {% for listing in user_listings %}
           <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -214,11 +188,19 @@ account.html
           <div class="col-span-1 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed p-8 text-center sm:col-span-1 xl:col-span-3">
             <div>
               <p class="font-semibold text-slate-700">No listings yet</p>
-              <p class="mt-1 text-sm text-slate-500">Click <strong>+ New Listing</strong> to get started.</p>
+              <p class="mt-1 text-sm text-slate-500">Click <strong>+ Create Listing</strong> to get started.</p>
             </div>
           </div>
           {% endif %}
 
+        </div>
+
+        <!--View Past listings-->
+        <div class="mt-6 flex items-center justify-between">
+          <a href="{% url 'past_listings' %}"
+             class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            View Past Listings
+          </a>
         </div>
       </section>
 
