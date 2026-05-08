@@ -4,7 +4,7 @@
 # CSC 648-848 Spring 2026 - Team 17
 
 from django.core.management.base import BaseCommand
-from backend.models import Role, User, Category, Listing
+from marketplace.models import Role, User, Category, Listing
 
 
 CATEGORIES = [
@@ -145,6 +145,7 @@ class Command(BaseCommand):
 
         # Create a seed seller user with hashed password
         seller, created = User.objects.get_or_create(
+            username="seed_seller",
             sfsu_email="seed_seller@sfsu.edu",
             defaults={
                 "first_name": "Seed",

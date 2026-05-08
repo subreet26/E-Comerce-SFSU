@@ -5,12 +5,206 @@ account.html
  It displays user information, order history, and account settings.
  Created by Subreet Singh on 04-09-2026
 -->
- {% extends "base.html" %}
- 
- {% block title %}Account | Alli-Trade{% endblock %}
- 
- {% block content %}
-    <!--
-    add code for account page
-    -->
-    {% endblock %}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Account | Alli-Trade{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-7xl px-6 py-10">
+
+  <!-- Unverified warning banner -->
+  {% if not user.profile.is_verified %}
+  <div class="mb-6 flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4">
+    <svg class="h-6 w-6 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+    <div class="flex-1">
+      <p class="text-sm font-semibold text-amber-800">Your account is not verified</p>
+      <p class="text-sm text-amber-700">Verify your SFSU student status to build trust with buyers and sellers on campus.</p>
+    </div>
+    <a href="{% url 'verify_student' %}"
+       class="rounded-full border border-amber-400 bg-white px-4 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition">
+      Verify Now
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Two-column layout -->
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-stretch">
+
+    <!-- LEFT — Profile sidebar -->
+    <aside class="w-full lg:w-72 flex-shrink-0">
+      <div class="rounded-3xl bg-white p-6 shadow-sm">
+
+        <!-- Avatar -->
+        <div class="mb-4 flex justify-center">
+          {% if user.profile.avatar %}
+            <img src="{{ user.profile.avatar.url }}"
+                 alt="{{ user.get_full_name }}"
+                 class="h-24 w-24 rounded-full object-cover ring-2 ring-slate-100">
+          {% else %}
+            <div class="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 ring-2 ring-slate-200">
+              <svg class="h-12 w-12 text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Name + email -->
+        <div class="mb-3 text-center">
+          <p class="text-lg font-bold tracking-tight text-slate-900">
+            {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
+          </p>
+          <p class="text-sm text-slate-500">{{ user.email }}</p>
+        </div>
+
+        <!-- Verification badge -->
+        <div class="mb-5 flex justify-center">
+          {% if user.profile.is_verified %}
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              SFSU Verified
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Profile fields -->
+        <div class="mb-5 space-y-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Year</p>
+            <p class="text-sm text-slate-700">
+              {% if user.profile.year %}{{ user.profile.year }}{% else %}N/A{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Major</p>
+            <p class="text-sm text-slate-700">
+              {% if user.profile.major %}{{ user.profile.major }}{% else %}N/A{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Bio</p>
+            <p class="text-sm leading-relaxed text-slate-700">
+              {% if user.profile.bio %}{{ user.profile.bio|truncatewords:25 }}{% else %}No bio yet.{% endif %}
+            </p>
+          </div>
+        </div>
+
+        <hr class="mb-5 border-slate-100">
+
+        <!-- Action buttons -->
+        <div class="mt-auto space-y-2">
+          <a href="{% url 'edit_profile' %}"
+             class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit Profile
+          </a>
+
+
+          <a href="{% url 'logout' %}"
+             class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-100">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Sign Out
+          </a>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT — Main content -->
+    <div class="flex-1 space-y-6">
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
+          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ user_listings.count }}</p>
+          <p class="mt-1 text-sm text-slate-500">Active Listings</p>
+        </div>
+        <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
+          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ sold_count|default:"0" }}</p>
+          <p class="mt-1 text-sm text-slate-500">Items Sold</p>
+        </div>
+        <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
+          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ saved_count|default:"0" }}</p>
+          <p class="mt-1 text-sm text-slate-500">Saved Items</p>
+        </div>
+      </div>
+
+      <!-- My Listings -->
+      <section class="rounded-3xl bg-white p-8 shadow-sm">
+        <div class="mb-6 flex items-center justify-between">
+          <h2 class="text-2xl font-bold tracking-tight">My Listings</h2>
+          <a href="{% url 'create_listing' %}"
+             class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            + Create Listing
+          </a>
+        </div>
+
+        <div class="flexbox items-center">
+          <!-- Existing listings -->
+          {% for listing in user_listings %}
+          <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <div class="relative">
+              <img
+                src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+                alt="{{ listing.title }}"
+                class="h-48 w-full object-cover"
+              />
+              <span class="absolute bottom-2 left-2 rounded-md bg-slate-900 px-2 py-0.5 text-xs font-bold text-white">
+                ${{ listing.price }}
+              </span>
+            </div>
+            <div class="p-4">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  {{ listing.category.category_name }}
+                </span>
+                <span class="text-xs text-slate-400">{{ listing.created_at|timesince }} ago</span>
+              </div>
+              <h3 class="truncate font-semibold text-slate-900">{{ listing.title }}</h3>
+              <div class="mt-2 flex flex-wrap gap-1.5 text-xs font-medium">
+                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
+              </div>
+              <a href="{% url 'listing_detail' listing.id %}"
+                 class="mt-3 block text-sm font-semibold text-slate-600 hover:text-slate-900">
+                View Listing →
+              </a>
+            </div>
+          </article>
+          {% endfor %}
+
+          <!-- Empty state (shown alongside the add tile when no listings exist) -->
+          {% if not user_listings %}
+          <div class="col-span-1 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed p-8 text-center sm:col-span-1 xl:col-span-3">
+            <div>
+              <p class="font-semibold text-slate-700">No listings yet</p>
+              <p class="mt-1 text-sm text-slate-500">Click <strong>+ Create Listing</strong> to get started.</p>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+
+        <!--View Past listings-->
+        <div class="mt-6 flex items-center justify-between">
+          <a href="{% url 'past_listings' %}"
+             class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            View Past Listings
+          </a>
+        </div>
+      </section>
+
+    </div><!-- /.flex-1 -->
+  </div><!-- /.two-column -->
+</main>
+{% endblock %}
