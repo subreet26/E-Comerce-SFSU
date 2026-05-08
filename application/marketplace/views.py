@@ -40,28 +40,41 @@ def _get_logged_in_user(request):
 
 
 def get_marketplace_user(auth_user):
-    """Find or create the marketplace User record for a Django auth user."""
+    """Ensure required marketplace fields exist on the auth user.
+
+    This project uses a custom `AUTH_USER_MODEL` (marketplace.User). Historically
+    we had logic that tried to "create" a separate marketplace user record.
+    That would create duplicate rows and can trigger integrity errors.
+    """
     if not auth_user or not auth_user.is_authenticated:
         return None
 
-    mp_user = User.objects.filter(sfsu_email__iexact=auth_user.email).first()
-    if mp_user:
-        return mp_user
+    changed_fields = []
 
-    role, _ = Role.objects.get_or_create(role_name='student')
-    email = auth_user.email or f"{auth_user.username}@sfsu.edu"
-    first_name = auth_user.first_name or auth_user.username
-    last_name = auth_user.last_name or ""
+    if not getattr(auth_user, "sfsu_email", None):
+        inferred_email = (auth_user.email or "").strip().lower()
+        if not inferred_email:
+            inferred_email = f"{auth_user.username}@sfsu.edu"
+        auth_user.sfsu_email = inferred_email
+        changed_fields.append("sfsu_email")
 
-    mp_user = User.objects.create(
-        sfsu_email=email,
-        first_name=first_name,
-        last_name=last_name,
-        role=role,
-        password_hash=auth_user.password,
-        account_status='active',
-    )
-    return mp_user
+    if not (auth_user.email or "").strip():
+        auth_user.email = auth_user.sfsu_email
+        changed_fields.append("email")
+
+    if not getattr(auth_user, "password_hash", None):
+        auth_user.password_hash = auth_user.password
+        changed_fields.append("password_hash")
+
+    if getattr(auth_user, "role", None) is None:
+        role, _ = Role.objects.get_or_create(role_name="student")
+        auth_user.role = role
+        changed_fields.append("role")
+
+    if changed_fields:
+        auth_user.save(update_fields=changed_fields)
+
+    return auth_user
 
 
 def marketplace_home(request):
