@@ -35,3 +35,8 @@ application/db.sqlite3
 # Misc
 # ---------------------------
 *.log
+
+# ---------------------------
+# Staticfiles
+# ---------------------------
+application/staticfiles
