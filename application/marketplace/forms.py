@@ -25,8 +25,8 @@ class RegisterForm(UserCreationForm):
         if not email.endswith("@sfsu.edu"):
             raise ValidationError("Email must end with @sfsu.edu")
 
-        # case-insensitive uniqueness check
-        if User.objects.filter(email__iexact=email).exists():
+        # case-insensitive uniqueness check (this project uses both fields)
+        if User.objects.filter(email__iexact=email).exists() or User.objects.filter(sfsu_email__iexact=email).exists():
             raise ValidationError("This email is already in use.")
 
         return email
@@ -61,8 +61,13 @@ class RegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
 
-        # store cleaned email
-        user.email = self.cleaned_data["email"].strip().lower()
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        user.email = email
+        user.sfsu_email = email
+
+        # Keep the legacy column populated; authentication uses `password`, but
+        # other parts of the codebase read `password_hash`.
+        user.password_hash = user.password
 
         if commit:
             user.save()
