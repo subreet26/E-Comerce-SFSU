@@ -2,6 +2,7 @@
   This is the login page template for the marketplace app. 
   It provides a simple login form for users to access their accounts.
   Created by Subreet Singh on 04-09-2026
+  Implemented by Nicholas Blackson on 04-21-2026
 -->
 
 {% extends "base.html" %}
@@ -9,7 +10,58 @@
 {% block title %}Login | Alli-Trade{% endblock %}
 
 {% block content %}
-<!--
-add code for login
--->
+<main class="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center px-6 py-10">
+  <section class="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
+    
+    <div class="mb-6 text-center">
+      <h1 class="text-3xl font-bold tracking-tight">Welcome back</h1>
+      <p class="mt-2 text-sm text-slate-600">Log in to your Alli-Trade account</p>
+    </div>
+
+    <form method="POST" action="{% url 'login' %}" class="space-y-5">
+      {% csrf_token %}
+      {% if next %}
+        <input type="hidden" name="next" value="{{ next }}" />
+      {% endif %}
+
+      <div>
+        <label for="username" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Username or Email
+        </label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+        />
+      </div>
+
+      <div>
+        <label for="password" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          class="w-full rounded-lg border px-3 py-2 text-sm outline-none ring-slate-300 focus:ring"
+        />
+      </div>
+
+      <button type="submit" class="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        Log In
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-slate-600">
+      Don’t have an account?
+      <a href="{% url 'register' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="font-semibold text-slate-900 hover:underline">
+        Sign up
+      </a>
+    </p>
+
+  </section>
+</main>
 {% endblock %}
