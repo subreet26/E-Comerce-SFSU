@@ -99,7 +99,7 @@ def login_view(request):
             return render(request, "marketplace/login.html", {"next": next_page})
 
         # Check if user exists (by username or email)
-        user_exists = AuthUser.objects.filter(
+        user_exists = User.objects.filter(
             Q(username=username_or_email) | Q(email__iexact=username_or_email)
         ).exists()
 
