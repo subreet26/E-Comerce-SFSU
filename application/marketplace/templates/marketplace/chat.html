@@ -9,7 +9,340 @@ chat.html
 {% block title %}Chat | Alli-Trade{% endblock %}
 
 {% block content %}
-<!--
-add code for chat interface
--->
+<main class="mx-auto max-w-7xl px-6 py-10">
+    <section class="rounded-3xl border bg-white shadow-sm">
+        <div class="grid grid-cols-1 gap-0 md:grid-cols-12">
+            <!-- Thread list -->
+            <aside class="md:col-span-4 md:border-r">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <div>
+                        <h1 class="text-lg font-semibold">Messages</h1>
+                        <p class="text-sm text-slate-500">Grouped by listing</p>
+                    </div>
+                </div>
+
+                <div class="max-h-[70vh] overflow-y-auto">
+                    <nav
+                        id="threadNav"
+                        class="p-2"
+                        data-chat-url="{% url 'chat' %}"
+                        data-threads-poll-url="{% url 'chat_threads_poll' %}"
+                        data-active-listing-id="{{ active_listing_id|default:'' }}"
+                        data-active-other-user-id="{{ active_other_user_id|default:'' }}"
+                    >
+                        {% if threads %}
+                            {% for thread in threads %}
+                                <a
+                                    href="{% url 'chat' %}?listing={{ thread.listing.listing_id }}&with={{ thread.other_user.id }}"
+                                    data-thread-listing-id="{{ thread.listing.listing_id }}"
+                                    data-thread-other-user-id="{{ thread.other_user.id }}"
+                                    class="block rounded-2xl border px-4 py-3 mb-2 hover:bg-slate-50 {% if thread.listing.listing_id == active_listing_id and thread.other_user.id == active_other_user_id %}border-violet-200 bg-violet-50{% else %}border-slate-200 bg-white{% endif %}"
+                                >
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-semibold text-slate-900">
+                                                {{ thread.listing.title }}
+                                            </p>
+                                            <p class="truncate text-xs text-slate-600">
+                                                With {{ thread.other_user.get_full_name|default:thread.other_user.username }}
+                                            </p>
+                                        </div>
+
+                                        <div class="shrink-0 text-right">
+                                            <p class="js-thread-time text-[11px] text-slate-500">{{ thread.last_message.created_at|timesince }} ago</p>
+                                            {% if thread.unread_count %}
+                                                <span class="js-thread-unread mt-1 inline-flex items-center rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                                                    {{ thread.unread_count }} new
+                                                </span>
+                                            {% else %}
+                                                <span class="js-thread-read mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400">
+                                                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    read
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <p class="js-thread-preview mt-2 truncate text-xs text-slate-500">
+                                        {{ thread.last_message.content }}
+                                    </p>
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                    </nav>
+
+                    <div id="threadEmptyState" class="p-6 {% if threads %}hidden{% endif %}">
+                        <p class="text-sm text-slate-600">No listing chats yet.</p>
+                        <p class="mt-2 text-xs text-slate-500">Start a chat from a listing page by messaging the seller.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Conversation -->
+            <section class="md:col-span-8">
+                <div class="flex items-center justify-between gap-3 border-b px-5 py-4">
+                    {% if active_listing and other_user %}
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold">{{ active_listing.title }}</p>
+                            <p class="truncate text-xs text-slate-600">
+                                Chat with {{ other_user.get_full_name|default:other_user.username }} ·
+                                <a href="{% url 'listing_detail' active_listing.listing_id %}" class="font-semibold text-violet-700 hover:text-violet-900">View listing</a>
+                            </p>
+                        </div>
+                        <div class="shrink-0 text-xs text-slate-500">
+                            Polling for updates
+                        </div>
+                    {% else %}
+                        <div>
+                            <p class="text-sm font-semibold">Select a chat</p>
+                            <p class="text-xs text-slate-500">Choose a listing conversation on the left.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div id="chatScroll" class="max-h-[70vh] overflow-y-auto px-5 py-4 bg-slate-50">
+                    {% if active_listing and other_user %}
+                        {% if conversation %}
+                            <div id="chatMessages" class="space-y-3" data-poll-url="{% url 'chat_poll' %}" data-listing-id="{{ active_listing.listing_id }}" data-other-user-id="{{ other_user.id }}">
+                                {% for msg in conversation %}
+                                    <div class="js-message" data-message-id="{{ msg.message_id }}">
+                                        <div class="flex {% if msg.sender_id == request.user.id %}justify-end{% else %}justify-start{% endif %}">
+                                            <div class="max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm {% if msg.sender_id == request.user.id %}bg-violet-600 text-white{% else %}bg-white text-slate-900 border{% endif %}">
+                                                <p class="whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                                                <p class="mt-1 text-[11px] {% if msg.sender_id == request.user.id %}text-violet-100{% else %}text-slate-400{% endif %}">
+                                                    {{ msg.created_at|date:"M d, g:i A" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div id="chatMessages" class="rounded-2xl border bg-white p-5 text-sm text-slate-600" data-poll-url="{% url 'chat_poll' %}" data-listing-id="{{ active_listing.listing_id }}" data-other-user-id="{{ other_user.id }}">
+                                No messages yet. Say hello to start the conversation.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="rounded-2xl border bg-white p-6 text-sm text-slate-600">
+                            Messages are listing-based: buyers start chats from listing pages.
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if active_listing and other_user %}
+                    <div class="border-t bg-white px-5 py-4">
+                        <form method="POST" class="flex items-end gap-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="listing_id" value="{{ active_listing.listing_id }}" />
+
+                            <div class="flex-1">
+                                <label for="content" class="sr-only">Message</label>
+                                <textarea
+                                    id="content"
+                                    name="content"
+                                    rows="2"
+                                    required
+                                    class="w-full resize-none rounded-2xl border bg-slate-50 px-4 py-3 text-sm outline-none focus:border-violet-300"
+                                    placeholder="Write a message…"
+                                ></textarea>
+                            </div>
+
+                            <button type="submit" class="rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700">
+                                Send
+                            </button>
+                        </form>
+                        <p class="mt-2 text-xs text-slate-500">
+                            Keep it respectful. Chats are tied to this listing.
+                        </p>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </section>
+
+    <script>
+        (function () {
+            async function pollThreads() {
+                const threadNav = document.getElementById('threadNav');
+                if (!threadNav) return;
+
+                const emptyState = document.getElementById('threadEmptyState');
+                const threadsPollUrl = threadNav.dataset.threadsPollUrl;
+                const chatUrl = threadNav.dataset.chatUrl;
+                const activeListingId = String(threadNav.dataset.activeListingId || '');
+                const activeOtherUserId = String(threadNav.dataset.activeOtherUserId || '');
+                if (!threadsPollUrl || !chatUrl) return;
+
+                try {
+                    const res = await fetch(threadsPollUrl, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const threads = (data && Array.isArray(data.threads)) ? data.threads : [];
+
+                    threadNav.textContent = '';
+
+                    if (emptyState) {
+                        if (threads.length > 0) emptyState.classList.add('hidden');
+                        else emptyState.classList.remove('hidden');
+                    }
+
+                    for (const t of threads) {
+                        const listingId = String(t.listing_id);
+                        const otherUserId = String(t.other_user_id);
+                        const isActive = listingId === activeListingId && otherUserId === activeOtherUserId;
+
+                        const a = document.createElement('a');
+                        a.href = `${chatUrl}?listing=${encodeURIComponent(listingId)}&with=${encodeURIComponent(otherUserId)}`;
+                        a.dataset.threadListingId = listingId;
+                        a.dataset.threadOtherUserId = otherUserId;
+                        a.className = 'block rounded-2xl border px-4 py-3 mb-2 hover:bg-slate-50 ' + (isActive ? 'border-violet-200 bg-violet-50' : 'border-slate-200 bg-white');
+
+                        const topRow = document.createElement('div');
+                        topRow.className = 'flex items-start justify-between gap-3';
+
+                        const left = document.createElement('div');
+                        left.className = 'min-w-0';
+
+                        const title = document.createElement('p');
+                        title.className = 'truncate text-sm font-semibold text-slate-900';
+                        title.textContent = t.listing_title || '';
+
+                        const withLine = document.createElement('p');
+                        withLine.className = 'truncate text-xs text-slate-600';
+                        withLine.textContent = `With ${t.other_user_name || ''}`;
+
+                        left.appendChild(title);
+                        left.appendChild(withLine);
+
+                        const right = document.createElement('div');
+                        right.className = 'shrink-0 text-right';
+
+                        const time = document.createElement('p');
+                        time.className = 'js-thread-time text-[11px] text-slate-500';
+                        time.textContent = t.last_message_created_at_display || '';
+                        right.appendChild(time);
+
+                        const unreadCount = Number(t.unread_count || 0);
+                        if (unreadCount > 0) {
+                            const unread = document.createElement('span');
+                            unread.className = 'js-thread-unread mt-1 inline-flex items-center rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white';
+                            unread.textContent = `${unreadCount} new`;
+                            right.appendChild(unread);
+                        } else {
+                            const read = document.createElement('span');
+                            read.className = 'js-thread-read mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400';
+
+                            const dot = document.createElement('span');
+                            dot.className = 'inline-block h-1.5 w-1.5 rounded-full bg-slate-300';
+
+                            const label = document.createElement('span');
+                            label.textContent = 'read';
+
+                            read.appendChild(dot);
+                            read.appendChild(label);
+                            right.appendChild(read);
+                        }
+
+                        topRow.appendChild(left);
+                        topRow.appendChild(right);
+
+                        const preview = document.createElement('p');
+                        preview.className = 'js-thread-preview mt-2 truncate text-xs text-slate-500';
+                        preview.textContent = t.last_message_content || '';
+
+                        a.appendChild(topRow);
+                        a.appendChild(preview);
+                        threadNav.appendChild(a);
+                    }
+                } catch (e) {
+                    // fail silently
+                }
+            }
+
+            pollThreads();
+            window.setInterval(pollThreads, 7000);
+
+            const messagesRoot = document.getElementById('chatMessages');
+            const scrollBox = document.getElementById('chatScroll');
+            if (!messagesRoot || !scrollBox) return;
+
+            const pollUrl = messagesRoot.dataset.pollUrl;
+            const listingId = messagesRoot.dataset.listingId;
+            const otherUserId = messagesRoot.dataset.otherUserId;
+            if (!pollUrl || !listingId || !otherUserId) return;
+
+            function getLastMessageId() {
+                const nodes = messagesRoot.querySelectorAll('.js-message[data-message-id]');
+                if (!nodes.length) return 0;
+                const last = nodes[nodes.length - 1];
+                const raw = last.getAttribute('data-message-id');
+                const id = parseInt(raw || '0', 10);
+                return Number.isFinite(id) ? id : 0;
+            }
+
+            function appendMessage(msg) {
+                // Ensure container exists even when there were no messages.
+                if (!messagesRoot.classList.contains('space-y-3')) {
+                    messagesRoot.className = 'space-y-3';
+                    messagesRoot.textContent = '';
+                }
+
+                const outer = document.createElement('div');
+                outer.className = 'js-message';
+                outer.dataset.messageId = String(msg.id);
+
+                const row = document.createElement('div');
+                row.className = 'flex ' + (msg.is_outgoing ? 'justify-end' : 'justify-start');
+
+                const bubble = document.createElement('div');
+                bubble.className = 'max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ' + (msg.is_outgoing ? 'bg-violet-600 text-white' : 'bg-white text-slate-900 border');
+
+                const p = document.createElement('p');
+                p.className = 'whitespace-pre-wrap break-words';
+                p.textContent = msg.content;
+
+                const meta = document.createElement('p');
+                meta.className = 'mt-1 text-[11px] ' + (msg.is_outgoing ? 'text-violet-100' : 'text-slate-400');
+                meta.textContent = msg.created_at_display || '';
+
+                bubble.appendChild(p);
+                bubble.appendChild(meta);
+                row.appendChild(bubble);
+                outer.appendChild(row);
+                messagesRoot.appendChild(outer);
+            }
+
+            function scrollToBottom() {
+                scrollBox.scrollTop = scrollBox.scrollHeight;
+            }
+
+            // Initial scroll
+            scrollToBottom();
+
+            async function poll() {
+                const afterId = getLastMessageId();
+                const url = new URL(pollUrl, window.location.origin);
+                url.searchParams.set('listing', listingId);
+                url.searchParams.set('with', otherUserId);
+                url.searchParams.set('after_id', String(afterId));
+
+                try {
+                    const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return;
+
+                    for (const m of data.messages) {
+                        appendMessage(m);
+                    }
+                    scrollToBottom();
+                } catch (e) {
+                    // fail silently; next poll will retry
+                }
+            }
+
+            window.setInterval(poll, 5000);
+        })();
+    </script>
+</main>
 {% endblock %}
