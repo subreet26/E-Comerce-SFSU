@@ -460,8 +460,24 @@ def verify_student(request):
     context = base_context()
     return render(request, "marketplace/verify_student.html", context)
 
+
 def edit_profile(request):
     context = base_context()
+    if request.method == 'POST':
+        # Update User model fields
+        request.user.first_name = request.POST.get('first_name', '')
+        request.user.last_name = request.POST.get('last_name', '')
+        request.user.save()
+
+        # Update model fields
+        profile = request.user.profile
+
+        profile.avatar_url = request.POST.get('avatar_url', '')
+        profile.year = request.POST.get('year', '')
+        profile.major = request.POST.get('major', '')
+        profile.bio = request.POST.get('bio', '')
+        profile.save()
+        return redirect('account')
     return render(request, "marketplace/edit_profile.html", context)
 
 def past_listings(request):
