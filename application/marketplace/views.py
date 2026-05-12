@@ -13,6 +13,8 @@ from django.contrib.auth import get_user_model
 from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
 
+DEFAULT_LISTING_IMAGE = "images/marketplace/placeholder-listing.svg"
+
 
 User = get_user_model()
 
@@ -356,9 +358,8 @@ def create_listing_view(request):
             category=cat,
             seller=market_user,
             intent=status,
-            thumbnail_url=thumbnail_url or None,
+            main_picture_url=thumbnail_url or DEFAULT_LISTING_IMAGE,
         )
-        listing.save()
         messages.success(request, "Listing created!")
         return redirect("listing_detail", listing_id=listing.listing_id)
 
@@ -388,13 +389,23 @@ def edit_listing_view(request, listing_id):
     listing = get_object_or_404(Listing, listing_id=listing_id, seller=market_user)
 
     if request.method == "POST":
+        # Handle delete action
+        if request.POST.get("_action") == "delete":
+            listing.delete()
+            messages.success(request, "Listing deleted.")
+            return redirect("account")
+
         listing.title = request.POST.get("title", listing.title).strip()
         listing.description = request.POST.get("description", listing.description).strip()
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
+        listing.intent = request.POST.get("status", listing.intent)
+
         thumbnail_url = request.POST.get("thumbnail_url", "").strip()
         if thumbnail_url:
-            listing.thumbnail_url = thumbnail_url
+            listing.main_picture_url = thumbnail_url
+        elif not listing.main_picture_url:
+            listing.main_picture_url = DEFAULT_LISTING_IMAGE
 
         try:
             listing.price = round(float(request.POST.get("price", listing.price)), 2)

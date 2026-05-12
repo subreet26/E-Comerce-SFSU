@@ -44,33 +44,29 @@ create_listing.html
       <!-- Two-column layout -->
       <div class="flex gap-0 divide-x divide-slate-100">
 
-        <!-- Left column: Image Upload -->
-        <div class="p-6 flex flex-col" style="width: 480px; flex-shrink: 0;">
-          <div class="flex items-baseline justify-between mb-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photos</h2>
-            <p class="text-xs text-slate-400"><span id="image-count">0</span> / 5 images</p>
-          </div>
+        <!-- Left column: Image -->
+        <div class="p-6 flex flex-col gap-4" style="width: 480px; flex-shrink: 0;">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photo</h2>
 
-          <!-- Thumbnails row -->
-          <div id="thumbnail-row" class="flex gap-2 flex-wrap mb-3"></div>
-
-          <!-- Drop zone (hidden once limit reached) -->
-          <div id="drop-zone"
-              class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center cursor-pointer transition hover:border-slate-400 hover:bg-slate-100 flex-1"
-              style="min-height: 180px;">
-            <input id="image-input" type="file" name="images" accept="image/*" multiple
-                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-            <div id="upload-icon" class="px-4">
-              <svg class="mx-auto h-10 w-10 text-slate-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+          <!-- Preview -->
+          <div id="image-preview-wrap" class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center" style="height:220px;">
+            <img id="image-preview" src="" alt="Preview" class="hidden w-full h-full object-cover">
+            <div id="preview-placeholder" class="flex flex-col items-center gap-2 text-slate-400">
+              <svg class="h-10 w-10" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload images</p>
-              <p class="text-xs text-slate-400">PNG, JPG up to 10MB each · Max 5 images</p>
+              <p class="text-xs">No image — a default will be used</p>
             </div>
           </div>
 
-          <!-- Hidden inputs container (populated by JS) -->
-          <div id="hidden-inputs"></div>
+          <!-- URL input -->
+          <div>
+            <label for="thumbnail_url" class="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
+            <input type="url" id="thumbnail_url" name="thumbnail_url"
+              placeholder="https://example.com/image.jpg"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
+            <p class="mt-1 text-xs text-slate-400">Leave blank to use the default placeholder image.</p>
+          </div>
         </div>
 
         <!-- Right column: Form Fields -->
@@ -203,73 +199,27 @@ create_listing.html
   </div>
 </div>
 
-<!-- Image Upload Script -->
+<!-- Image URL Preview Script -->
 <script>
-  const MAX_IMAGES = 5;
-  const input = document.getElementById('image-input');
-  const dropZone = document.getElementById('drop-zone');
-  const thumbRow = document.getElementById('thumbnail-row');
-  const countLabel = document.getElementById('image-count');
-  const hiddenWrap = document.getElementById('hidden-inputs');
+  const urlInput = document.getElementById('thumbnail_url');
+  const preview = document.getElementById('image-preview');
+  const placeholder = document.getElementById('preview-placeholder');
 
-  let files = [];
-
-  function updateUI() {
-    countLabel.textContent = files.length;
-
-    // Show/hide drop zone based on limit
-    if (files.length >= MAX_IMAGES) {
-      dropZone.classList.add('hidden');
-    } else {
-      dropZone.classList.remove('hidden');
-    }
-
-    // Rebuild thumbnails
-    thumbRow.innerHTML = '';
-    files.forEach((file, i) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const wrap = document.createElement('div');
-        wrap.className = 'relative group';
-        wrap.style.cssText = 'width:80px; height:80px; flex-shrink:0;';
-
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.className = 'w-full h-full object-cover rounded-lg border border-slate-200';
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.title = 'Remove';
-        btn.className = 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow';
-        btn.innerHTML = '&times;';
-        btn.addEventListener('click', () => {
-          files.splice(i, 1);
-          updateUI();
-        });
-
-        // First image badge
-        if (i === 0) {
-          const badge = document.createElement('span');
-          badge.className = 'absolute bottom-1 left-1 text-[10px] bg-slate-900 text-white rounded px-1 py-0.5 leading-none';
-          badge.textContent = 'Cover';
-          wrap.appendChild(badge);
-        }
-
-        wrap.appendChild(img);
-        wrap.appendChild(btn);
-        thumbRow.appendChild(wrap);
+  function updatePreview(url) {
+    if (url && url.trim()) {
+      preview.src = url.trim();
+      preview.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      preview.onerror = () => {
+        preview.classList.add('hidden');
+        placeholder.classList.remove('hidden');
       };
-      reader.readAsDataURL(file);
-    });
+    } else {
+      preview.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    }
   }
 
-  input.addEventListener('change', function () {
-    const selected = Array.from(this.files);
-    const slots = MAX_IMAGES - files.length;
-    const toAdd = selected.slice(0, slots);
-    files = files.concat(toAdd);
-    updateUI();
-    this.value = '';
-  });
+  urlInput.addEventListener('input', () => updatePreview(urlInput.value));
 </script>
 {% endblock %}
