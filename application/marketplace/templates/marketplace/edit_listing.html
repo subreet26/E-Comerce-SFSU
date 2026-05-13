@@ -58,37 +58,34 @@ edit_listing.html
       <!-- Two-column layout -->
       <div class="flex gap-0 divide-x divide-slate-100">
 
-        <!-- Left column: Image -->
-        <div class="p-6 flex flex-col gap-4" style="width: 480px; flex-shrink: 0;">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photo</h2>
-
-          <!-- Preview -->
-          <div id="image-preview-wrap" class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center" style="height:220px;">
-            {% if listing.main_picture_url %}
-              <img id="image-preview" src="{{ listing.main_picture_url }}" alt="Listing image" class="w-full h-full object-cover">
-              <div id="preview-placeholder" class="hidden flex flex-col items-center gap-2 text-slate-400">
-            {% else %}
-              <img id="image-preview" src="" alt="Preview" class="hidden w-full h-full object-cover">
-              <div id="preview-placeholder" class="flex flex-col items-center gap-2 text-slate-400">
-            {% endif %}
-                <svg class="h-10 w-10" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <p class="text-xs">No image — default will be kept</p>
-              </div>
+        <!-- Left column: Image Upload -->
+        <div class="p-6 flex flex-col" style="width: 480px; flex-shrink: 0;">
+          <div class="flex items-baseline justify-between mb-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photos</h2>
+            <p class="text-xs text-slate-400"><span id="image-count">0</span> / 5 images</p>
           </div>
 
-          <!-- URL input -->
-          <div>
-            <label for="thumbnail_url" class="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
-            <input type="url" id="thumbnail_url" name="thumbnail_url"
-              value="{{ listing.main_picture_url|default:'' }}"
-              placeholder="https://example.com/image.jpg"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-            <p class="mt-1 text-xs text-slate-400">Change the URL to update the image, or clear it to keep the existing one.</p>
+          <!-- Thumbnails row -->
+          <div id="thumbnail-row" class="flex gap-2 flex-wrap mb-3"></div>
+
+          <!-- Drop zone (hidden once limit reached) -->
+          <div id="drop-zone"
+               class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center cursor-pointer transition hover:border-slate-400 hover:bg-slate-100 flex-1"
+               style="min-height: 180px;">
+            <input id="image-input" type="file" name="images" accept="image/*" multiple
+                   class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+            <div id="upload-icon" class="px-4">
+              <svg class="mx-auto h-10 w-10 text-slate-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload images</p>
+              <p class="text-xs text-slate-400">PNG, JPG up to 10MB each · Max 5 images</p>
+            </div>
           </div>
 
-          <!-- Existing image data (legacy, kept for reference) -->
+          <div id="hidden-inputs"></div>
+
+          <!-- Existing images passed from server (to track removals) -->
           <div id="existing-image-data"
                data-images="{% if listing.main_picture_url %}{{ listing.main_picture_url }}{% endif %}"
                class="hidden"></div>
@@ -215,27 +212,113 @@ edit_listing.html
   </div>
 </div>
 
-<!-- Image URL Preview Script -->
+<!-- Image Upload Script -->
 <script>
-  const urlInput = document.getElementById('thumbnail_url');
-  const preview = document.getElementById('image-preview');
-  const placeholder = document.getElementById('preview-placeholder');
+  const MAX_IMAGES = 5;
+  const input = document.getElementById('image-input');
+  const dropZone = document.getElementById('drop-zone');
+  const thumbRow = document.getElementById('thumbnail-row');
+  const countLabel = document.getElementById('image-count');
 
-  function updatePreview(url) {
-    if (url && url.trim()) {
-      preview.src = url.trim();
-      preview.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-      preview.onerror = () => {
-        preview.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-      };
-    } else {
-      preview.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-    }
+  // Track new File objects and existing server URLs separately
+  let newFiles = [];
+  let existingUrls = [];
+
+  // Seed existing image from server if present
+  const existingData = document.getElementById('existing-image-data');
+  if (existingData) {
+    const url = existingData.dataset.images.trim();
+    if (url) existingUrls = [url];
   }
 
-  urlInput.addEventListener('input', () => updatePreview(urlInput.value));
+  function totalCount() {
+    return existingUrls.length + newFiles.length;
+  }
+
+  function updateUI() {
+    countLabel.textContent = totalCount();
+    dropZone.classList.toggle('hidden', totalCount() >= MAX_IMAGES);
+    thumbRow.innerHTML = '';
+
+    // Render existing (server) images first
+    existingUrls.forEach((url, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'relative group';
+      wrap.style.cssText = 'width:80px; height:80px; flex-shrink:0;';
+
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'w-full h-full object-cover rounded-lg border border-slate-200';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.title = 'Remove';
+      btn.className = 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow';
+      btn.innerHTML = '&times;';
+      btn.addEventListener('click', () => {
+        existingUrls.splice(i, 1);
+        updateUI();
+      });
+
+      if (i === 0 && newFiles.length === 0) {
+        const badge = document.createElement('span');
+        badge.className = 'absolute bottom-1 left-1 text-[10px] bg-slate-900 text-white rounded px-1 py-0.5 leading-none';
+        badge.textContent = 'Cover';
+        wrap.appendChild(badge);
+      }
+
+      wrap.appendChild(img);
+      wrap.appendChild(btn);
+      thumbRow.appendChild(wrap);
+    });
+
+    // Render newly added files
+    newFiles.forEach((file, i) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wrap = document.createElement('div');
+        wrap.className = 'relative group';
+        wrap.style.cssText = 'width:80px; height:80px; flex-shrink:0;';
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'w-full h-full object-cover rounded-lg border border-slate-200';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.title = 'Remove';
+        btn.className = 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow';
+        btn.innerHTML = '&times;';
+        btn.addEventListener('click', () => {
+          newFiles.splice(i, 1);
+          updateUI();
+        });
+
+        const globalIndex = existingUrls.length + i;
+        if (globalIndex === 0) {
+          const badge = document.createElement('span');
+          badge.className = 'absolute bottom-1 left-1 text-[10px] bg-slate-900 text-white rounded px-1 py-0.5 leading-none';
+          badge.textContent = 'Cover';
+          wrap.appendChild(badge);
+        }
+
+        wrap.appendChild(img);
+        wrap.appendChild(btn);
+        thumbRow.appendChild(wrap);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  input.addEventListener('change', function () {
+    const selected = Array.from(this.files);
+    const slots = MAX_IMAGES - totalCount();
+    newFiles = newFiles.concat(selected.slice(0, slots));
+    updateUI();
+    this.value = '';
+  });
+
+  // Initial render (shows existing image if any)
+  updateUI();
 </script>
 {% endblock %}

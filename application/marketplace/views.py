@@ -2,8 +2,13 @@
 # View functions for the marketplace app.
 # Created by Subreet Singh on 04-09-2026
 
+import os
+import uuid
+from pathlib import Path
+
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -12,8 +17,6 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import get_user_model
 from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
-
-DEFAULT_LISTING_IMAGE = "images/marketplace/placeholder-listing.svg"
 
 
 User = get_user_model()
@@ -25,6 +28,29 @@ CONDITION_CHOICES = [
     ("fair", "Fair"),
     ("poor", "Poor"),
 ]
+
+
+def _save_uploaded_image(image_file):
+
+    if not image_file:
+        return None
+
+    original_name = image_file.name or "image"
+    ext = Path(original_name).suffix.lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+        ext = ".jpg"
+
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+
+    save_dir = settings.MEDIA_ROOT
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, unique_name)
+
+    with open(save_path, "wb") as f:
+        for chunk in image_file.chunks():
+            f.write(chunk)
+
+    return f"{settings.MEDIA_URL}{unique_name}"
 
 
 def base_context():
@@ -331,6 +357,13 @@ def create_listing_view(request):
         category_id = request.POST.get("category", "")
         thumbnail_url = request.POST.get("thumbnail_url", "").strip()
 
+        # Handle uploaded image files — use the first image as thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        if uploaded_images:
+            saved_url = _save_uploaded_image(uploaded_images[0])
+            if saved_url:
+                thumbnail_url = saved_url
+
         if not title:
             messages.error(request, "Title is required.")
             return render(request, "marketplace/create_listing.html", _create_form_context(request.POST))
@@ -358,8 +391,9 @@ def create_listing_view(request):
             category=cat,
             seller=market_user,
             intent=status,
-            main_picture_url=thumbnail_url or DEFAULT_LISTING_IMAGE,
+            main_picture_url=thumbnail_url or None,
         )
+        listing.save()
         messages.success(request, "Listing created!")
         return redirect("listing_detail", listing_id=listing.listing_id)
 
@@ -399,13 +433,23 @@ def edit_listing_view(request, listing_id):
         listing.description = request.POST.get("description", listing.description).strip()
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
-        listing.intent = request.POST.get("status", listing.intent)
 
-        thumbnail_url = request.POST.get("thumbnail_url", "").strip()
-        if thumbnail_url:
-            listing.main_picture_url = thumbnail_url
-        elif not listing.main_picture_url:
-            listing.main_picture_url = DEFAULT_LISTING_IMAGE
+        # Handle intent/status field
+        new_intent = request.POST.get("status", "").strip()
+        if new_intent in ListingIntent.values:
+            listing.intent = new_intent
+
+        # Handle uploaded image — new upload takes priority, then explicit URL, then keep existing
+        uploaded_images = request.FILES.getlist("images")
+        if uploaded_images:
+            saved_url = _save_uploaded_image(uploaded_images[0])
+            if saved_url:
+                listing.main_picture_url = saved_url
+        else:
+            thumbnail_url = request.POST.get("thumbnail_url", "").strip()
+            if thumbnail_url:
+                listing.main_picture_url = thumbnail_url
+            # if neither, keep existing thumbnail
 
         try:
             listing.price = round(float(request.POST.get("price", listing.price)), 2)
