@@ -14,6 +14,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import IntegrityError
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -84,11 +85,21 @@ def get_marketplace_user(auth_user):
     changed_fields = []
 
     if not getattr(auth_user, "sfsu_email", None):
+        candidate_emails = []
+
         inferred_email = (auth_user.email or "").strip().lower()
-        if not inferred_email:
-            inferred_email = f"{auth_user.username}@sfsu.edu"
-        auth_user.sfsu_email = inferred_email
-        changed_fields.append("sfsu_email")
+        if inferred_email:
+            candidate_emails.append(inferred_email)
+
+        fallback_email = f"{auth_user.username}@sfsu.edu"
+        if fallback_email not in candidate_emails:
+            candidate_emails.append(fallback_email)
+
+        for candidate_email in candidate_emails:
+            if not User.objects.filter(sfsu_email__iexact=candidate_email).exclude(pk=auth_user.pk).exists():
+                auth_user.sfsu_email = candidate_email
+                changed_fields.append("sfsu_email")
+                break
 
     if not (auth_user.email or "").strip():
         auth_user.email = auth_user.sfsu_email
@@ -104,7 +115,10 @@ def get_marketplace_user(auth_user):
         changed_fields.append("role")
 
     if changed_fields:
-        auth_user.save(update_fields=changed_fields)
+        try:
+            auth_user.save(update_fields=changed_fields)
+        except IntegrityError:
+            pass
 
     return auth_user
 
@@ -349,7 +363,7 @@ def create_listing_view(request):
         })
         return ctx
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
@@ -423,7 +437,7 @@ def edit_listing_view(request, listing_id):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
     listing = get_object_or_404(Listing, listing_id=listing_id, seller=market_user)
 
     if request.method == "POST":
@@ -472,7 +486,7 @@ def listing_detail_view(request, listing_id):
         Listing.objects.select_related("category", "seller"),
         listing_id=listing_id
     )
-    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
+    market_user = request.user if request.user.is_authenticated else None
     context = base_context()
     context.update({
         "listing": listing,
@@ -488,7 +502,7 @@ def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
     user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
     unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
 
@@ -521,7 +535,7 @@ def chat_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     # Build threads grouped by (listing, other_user). This keeps chat scoped to listings.
     thread_map = {}
@@ -652,7 +666,7 @@ def chat_poll_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth_required"}, status=401)
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     raw_listing_id = request.GET.get("listing")
     raw_other_user_id = request.GET.get("with")
@@ -724,7 +738,7 @@ def chat_threads_poll_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth_required"}, status=401)
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     thread_map = {}
     message_qs = (
@@ -786,7 +800,7 @@ def send_message_view(request, listing_id):
         return redirect("login")
 
     listing = get_object_or_404(Listing, listing_id=listing_id)
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     chat_url = f"{reverse('chat')}?listing={listing.listing_id}&with={listing.seller_id}"
 
