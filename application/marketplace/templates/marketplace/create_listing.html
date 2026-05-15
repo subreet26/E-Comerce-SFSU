@@ -178,21 +178,10 @@ create_listing.html
 </div>
 
 <!-- Image Upload Script -->
-<script>
-  const input = document.getElementById('image-input');
-  const preview = document.getElementById('image-preview');
-  const icon = document.getElementById('upload-icon');
-  input.addEventListener('change', function () {
-    const file = this.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
-        icon.classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
+<script type="module">
+  import { initImagePreview } from "{% static 'js/image-preview.js' %}";
+  document.addEventListener('DOMContentLoaded', () => {
+    initImagePreview('image-input', 'image-preview', 'upload-icon');
   });
 </script>
 {% endblock %}
