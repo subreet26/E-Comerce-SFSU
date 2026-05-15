@@ -40,3 +40,8 @@ application/db.sqlite3
 # Staticfiles
 # ---------------------------
 application/staticfiles
+
+# ---------------------------
+# NodeJS/ECMA/JavaScript
+# ---------------------------
+node_modules/
