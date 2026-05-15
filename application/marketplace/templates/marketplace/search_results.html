@@ -231,49 +231,7 @@ search_results.html
       {% if results %}
         <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {% for listing in results %}
-            <article class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
-              {% if listing.main_picture_url %}
-                <img
-                  src="{{ listing.main_picture_url }}"
-                  alt="{{ listing.title }}"
-                  class="h-48 w-full object-cover"
-                />
-              {% else %}
-                <img
-                  src="{% static 'images/marketplace/placeholder-listing.svg' %}"
-                  alt="{{ listing.title }}"
-                  class="h-48 w-full object-cover"
-                />
-              {% endif %}
-
-              <div class="flex flex-1 flex-col p-5">
-                <div class="mb-3 flex items-center justify-between gap-3">
-                  <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-                    {{ listing.category.category_name }}
-                  </span>
-                  <span class="text-xs text-slate-500">{{ listing.created_at|timesince }} ago</span>
-                </div>
-
-                <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-slate-900">
-                  {{ listing.title }}
-                </h3>
-
-                <p class="mb-4 line-clamp-2 min-h-10 text-sm text-slate-600">
-                  {{ listing.description|default:"No description available." }}
-                </p>
-
-                <div class="mt-auto space-y-3">
-                  <p class="text-xl font-bold text-slate-900">${{ listing.price }}</p>
-
-                  <a href="{% url 'listing_detail' listing.listing_id %}" class="inline-flex items-center gap-1 text-sm font-semibold text-violet-700 hover:text-violet-900">
-                    View Listing
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </article>
+            {% include "marketplace/partials/listing_tile.html" with listing=listing %}
           {% endfor %}
         </div>
       {% else %}
