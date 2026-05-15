@@ -35,3 +35,13 @@ application/db.sqlite3
 # Misc
 # ---------------------------
 *.log
+
+# ---------------------------
+# Staticfiles
+# ---------------------------
+application/staticfiles
+
+# ---------------------------
+# NodeJS/ECMA/JavaScript
+# ---------------------------
+node_modules/

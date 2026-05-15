@@ -5,11 +5,165 @@ chat.html
     Created by Subreet Singh on 04-09-2026
 -->
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Chat | Alli-Trade{% endblock %}
 
 {% block content %}
-<!--
-add code for chat interface
--->
+<main class="mx-auto max-w-7xl px-6 py-10">
+    <section class="rounded-3xl border bg-white shadow-sm">
+        <div class="grid grid-cols-1 gap-0 md:grid-cols-12">
+            <!-- Thread list -->
+            <aside class="md:col-span-4 md:border-r">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <div>
+                        <h1 class="text-lg font-semibold">Messages</h1>
+                        <p class="text-sm text-slate-500">Grouped by listing</p>
+                    </div>
+                </div>
+
+                <div class="max-h-[70vh] overflow-y-auto">
+                    <nav
+                        id="threadNav"
+                        class="p-2"
+                        data-chat-url="{% url 'chat' %}"
+                        data-threads-poll-url="{% url 'chat_threads_poll' %}"
+                        data-active-listing-id="{{ active_listing_id|default:'' }}"
+                        data-active-other-user-id="{{ active_other_user_id|default:'' }}"
+                    >
+                        {% if threads %}
+                            {% for thread in threads %}
+                                <a
+                                    href="{% url 'chat' %}?listing={{ thread.listing.listing_id }}&with={{ thread.other_user.id }}"
+                                    data-thread-listing-id="{{ thread.listing.listing_id }}"
+                                    data-thread-other-user-id="{{ thread.other_user.id }}"
+                                    class="block rounded-2xl border px-4 py-3 mb-2 hover:bg-slate-50 {% if thread.listing.listing_id == active_listing_id and thread.other_user.id == active_other_user_id %}border-violet-200 bg-violet-50{% else %}border-slate-200 bg-white{% endif %}"
+                                >
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-semibold text-slate-900">
+                                                {{ thread.listing.title }}
+                                            </p>
+                                            <p class="truncate text-xs text-slate-600">
+                                                With {{ thread.other_user.get_full_name|default:thread.other_user.username }}
+                                            </p>
+                                        </div>
+
+                                        <div class="shrink-0 text-right">
+                                            <p class="js-thread-time text-[11px] text-slate-500">{{ thread.last_message.created_at|timesince }} ago</p>
+                                            {% if thread.unread_count %}
+                                                <span class="js-thread-unread mt-1 inline-flex items-center rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                                                    {{ thread.unread_count }} new
+                                                </span>
+                                            {% else %}
+                                                <span class="js-thread-read mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400">
+                                                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"></span>
+                                                    read
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <p class="js-thread-preview mt-2 truncate text-xs text-slate-500">
+                                        {{ thread.last_message.content }}
+                                    </p>
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                    </nav>
+
+                    <div id="threadEmptyState" class="p-6 {% if threads %}hidden{% endif %}">
+                        <p class="text-sm text-slate-600">No listing chats yet.</p>
+                        <p class="mt-2 text-xs text-slate-500">Start a chat from a listing page by messaging the seller.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Conversation -->
+            <section class="md:col-span-8">
+                <div class="flex items-center justify-between gap-3 border-b px-5 py-4">
+                    {% if active_listing and other_user %}
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold">{{ active_listing.title }}</p>
+                            <p class="truncate text-xs text-slate-600">
+                                Chat with {{ other_user.get_full_name|default:other_user.username }} ·
+                                <a href="{% url 'listing_detail' active_listing.listing_id %}" class="font-semibold text-violet-700 hover:text-violet-900">View listing</a>
+                            </p>
+                        </div>
+                        <div class="shrink-0 text-xs text-slate-500">
+                            Polling for updates
+                        </div>
+                    {% else %}
+                        <div>
+                            <p class="text-sm font-semibold">Select a chat</p>
+                            <p class="text-xs text-slate-500">Choose a listing conversation on the left.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div id="chatScroll" class="max-h-[70vh] overflow-y-auto px-5 py-4 bg-slate-50">
+                    {% if active_listing and other_user %}
+                        {% if conversation %}
+                            <div id="chatMessages" class="space-y-3" data-poll-url="{% url 'chat_poll' %}" data-listing-id="{{ active_listing.listing_id }}" data-other-user-id="{{ other_user.id }}">
+                                {% for msg in conversation %}
+                                    <div class="js-message" data-message-id="{{ msg.message_id }}">
+                                        <div class="flex {% if msg.sender_id == request.user.id %}justify-end{% else %}justify-start{% endif %}">
+                                            <div class="max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm {% if msg.sender_id == request.user.id %}bg-violet-600 text-white{% else %}bg-white text-slate-900 border{% endif %}">
+                                                <p class="whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                                                <p class="mt-1 text-[11px] {% if msg.sender_id == request.user.id %}text-violet-100{% else %}text-slate-400{% endif %}">
+                                                    {{ msg.created_at|date:"M d, g:i A" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div id="chatMessages" class="rounded-2xl border bg-white p-5 text-sm text-slate-600" data-poll-url="{% url 'chat_poll' %}" data-listing-id="{{ active_listing.listing_id }}" data-other-user-id="{{ other_user.id }}">
+                                No messages yet. Say hello to start the conversation.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="rounded-2xl border bg-white p-6 text-sm text-slate-600">
+                            Messages are listing-based: buyers start chats from listing pages.
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if active_listing and other_user %}
+                    <div class="border-t bg-white px-5 py-4">
+                        <form method="POST" class="flex items-end gap-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="listing_id" value="{{ active_listing.listing_id }}" />
+
+                            <div class="flex-1">
+                                <label for="content" class="sr-only">Message</label>
+                                <textarea
+                                    id="content"
+                                    name="content"
+                                    rows="2"
+                                    required
+                                    class="w-full resize-none rounded-2xl border bg-slate-50 px-4 py-3 text-sm outline-none focus:border-violet-300"
+                                    placeholder="Write a message…"
+                                ></textarea>
+                            </div>
+
+                            <button type="submit" class="rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700">
+                                Send
+                            </button>
+                        </form>
+                        <p class="mt-2 text-xs text-slate-500">
+                            Keep it respectful. Chats are tied to this listing.
+                        </p>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </section>
+
+    <script type="module">
+        import { initChat } from "{% static 'js/chat.js' %}";
+        document.addEventListener('DOMContentLoaded', initChat);
+    </script>
+</main>
 {% endblock %}
