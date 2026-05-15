@@ -1,16 +1,109 @@
 <!--
 account.html
- This template extends the base.html template and provides the 
- HTML structure for the "Account" page in the marketplace app. 
- It displays user information, order history, and account settings.
+ This template extends the base.html template and provides the
+ HTML structure for the "Account" page in the marketplace app.
  Created by Subreet Singh on 04-09-2026
 -->
- {% extends "base.html" %}
- 
- {% block title %}Account | Alli-Trade{% endblock %}
- 
- {% block content %}
-    <!--
-    add code for account page
-    -->
-    {% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Account | Alli-Trade{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-7xl px-6 py-10">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">My Listings</h1>
+      <p class="mt-1 text-sm text-slate-500">
+        {{ user.first_name }} {{ user.last_name }} ({{ user.sfsu_email }})
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'create_listing' %}"
+         class="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+        Create Listing
+      </a>
+      <a href="{% url 'chat' %}"
+         class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        Messages{% if unread_count %} ({{ unread_count }}){% endif %}
+      </a>
+    </div>
+  </div>
+
+  <div class="mb-6 flex gap-2 border-b border-slate-200">
+    <a href="{% url 'account' %}?tab=active"
+       class="px-4 py-2 text-sm font-semibold {% if active_tab == 'active' %}border-b-2 border-violet-600 text-violet-700{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+      Active Listings ({{ user_listings|length }})
+    </a>
+    <a href="{% url 'past_listings' %}"
+       class="px-4 py-2 text-sm font-semibold {% if active_tab == 'past' %}border-b-2 border-violet-600 text-violet-700{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+      Past Listings ({{ past_listings|length }})
+    </a>
+  </div>
+
+  {% if active_tab == 'past' %}
+    {% if past_listings %}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for listing in past_listings %}
+          <article class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            {% if listing.main_picture_url %}
+              <img src="{{ listing.main_picture_url }}" alt="{{ listing.title }}" class="h-40 w-full object-cover">
+            {% endif %}
+            <div class="p-4">
+              <h2 class="font-semibold text-slate-900">{{ listing.title }}</h2>
+              <p class="mt-1 text-xs text-slate-500">{{ listing.get_intent_display|default:listing.intent|title }}</p>
+              <p class="mt-2 text-lg font-bold text-slate-900">${{ listing.price }}</p>
+              <p class="mt-2 text-sm text-slate-600">{{ listing.description|truncatechars:120 }}</p>
+              <div class="mt-4 flex gap-2">
+                <a href="{% url 'listing_detail' listing.listing_id %}"
+                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  View
+                </a>
+                <a href="{% url 'edit_listing' listing.listing_id %}"
+                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  Edit
+                </a>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border bg-white p-8 text-center text-slate-600">
+        You have no past listings yet.
+      </div>
+    {% endif %}
+  {% else %}
+    {% if user_listings %}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for listing in user_listings %}
+          <article class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            {% if listing.main_picture_url %}
+              <img src="{{ listing.main_picture_url }}" alt="{{ listing.title }}" class="h-40 w-full object-cover">
+            {% endif %}
+            <div class="p-4">
+              <h2 class="font-semibold text-slate-900">{{ listing.title }}</h2>
+              <p class="mt-1 text-xs text-slate-500">{{ listing.get_intent_display|default:listing.intent|title }}</p>
+              <p class="mt-2 text-lg font-bold text-slate-900">${{ listing.price }}</p>
+              <p class="mt-2 text-sm text-slate-600">{{ listing.description|truncatechars:120 }}</p>
+              <div class="mt-4 flex gap-2">
+                <a href="{% url 'listing_detail' listing.listing_id %}"
+                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  View
+                </a>
+                <a href="{% url 'edit_listing' listing.listing_id %}"
+                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  Edit
+                </a>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border bg-white p-8 text-center text-slate-600">
+        You have no active listings. Create your first listing.
+      </div>
+    {% endif %}
+  {% endif %}
+</main>
+{% endblock %}

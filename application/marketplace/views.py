@@ -10,6 +10,9 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from backend.models import Category, Listing, ListingIntent, ListingType, User, Role, Message
 
+# Live listings use ListingIntent; legacy rows may still have status/intent "active".
+LIVE_LISTING_INTENTS = frozenset(ListingIntent.values)
+LEGACY_LIVE_LISTING_STATUS = "active"
 
 
 def base_context():
@@ -369,19 +372,51 @@ def listing_detail_view(request, listing_id):
 
 # --- Dashboard/Account ---
 
+def _get_past_listings(user):
+    return Listing.objects.filter(seller=user).exclude(
+        intent__in=LIVE_LISTING_INTENTS,
+    ).exclude(
+        intent=LEGACY_LIVE_LISTING_STATUS,
+    ).order_by("-created_at")
+
+
 def account_view(request):
     user = _get_logged_in_user(request)
     if not user:
         return redirect("login")
 
     user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
+    past_listings = _get_past_listings(user)
+    unread_count = Message.objects.filter(receiver=user, is_read=False).count()
+    active_tab = "past" if request.GET.get("tab") == "past" else "active"
+
+    context = base_context()
+    context.update({
+        "user": user,
+        "user_listings": user_listings,
+        "past_listings": past_listings,
+        "unread_count": unread_count,
+        "active_tab": active_tab,
+    })
+    return render(request, "marketplace/account.html", context)
+
+
+def past_listings_view(request):
+    user = _get_logged_in_user(request)
+    if not user:
+        return redirect("login")
+
+    user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
+    past_listings = _get_past_listings(user)
     unread_count = Message.objects.filter(receiver=user, is_read=False).count()
 
     context = base_context()
     context.update({
         "user": user,
         "user_listings": user_listings,
+        "past_listings": past_listings,
         "unread_count": unread_count,
+        "active_tab": "past",
     })
     return render(request, "marketplace/account.html", context)
 
