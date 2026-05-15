@@ -2,8 +2,13 @@
 # View functions for the marketplace app.
 # Created by Subreet Singh on 04-09-2026
 
+import os
+import uuid
+from pathlib import Path
+
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -27,6 +32,29 @@ CONDITION_CHOICES = [
     ("fair", "Fair"),
     ("poor", "Poor"),
 ]
+
+
+def _save_uploaded_image(image_file):
+
+    if not image_file:
+        return None
+
+    original_name = image_file.name or "image"
+    ext = Path(original_name).suffix.lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+        ext = ".jpg"
+
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+
+    save_dir = settings.MEDIA_ROOT
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, unique_name)
+
+    with open(save_path, "wb") as f:
+        for chunk in image_file.chunks():
+            f.write(chunk)
+
+    return f"{settings.MEDIA_URL}{unique_name}"
 
 
 def base_context():
@@ -333,6 +361,13 @@ def create_listing_view(request):
         category_id = request.POST.get("category", "")
         main_picture_url = request.POST.get("main_picture_url", "").strip()
 
+        # Handle uploaded image files — use the first image as thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        if uploaded_images:
+            saved_url = _save_uploaded_image(uploaded_images[0])
+            if saved_url:
+                thumbnail_url = saved_url
+
         if not title:
             messages.error(request, "Title is required.")
             return render(request, "marketplace/create_listing.html", _create_form_context(request.POST))
@@ -392,6 +427,12 @@ def edit_listing_view(request, listing_id):
     listing = get_object_or_404(Listing, listing_id=listing_id, seller=market_user)
 
     if request.method == "POST":
+        # Handle delete action
+        if request.POST.get("_action") == "delete":
+            listing.delete()
+            messages.success(request, "Listing deleted.")
+            return redirect("account")
+
         listing.title = request.POST.get("title", listing.title).strip()
         listing.description = request.POST.get("description", listing.description).strip()
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
