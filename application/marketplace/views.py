@@ -34,17 +34,15 @@ CONDITION_CHOICES = [
     ("poor", "Poor"),
 ]
 
-
-def _save_uploaded_image(image_file):
-
-    if not image_file:
-        return None
-
 # Live listings use ListingIntent; legacy rows may still have status/intent "active".
 LIVE_LISTING_INTENTS = frozenset(ListingIntent.values)
 LEGACY_LIVE_LISTING_STATUS = "active"
 
 
+def _save_uploaded_image(image_file):
+
+    if not image_file:
+        return None
     original_name = image_file.name or "image"
     ext = Path(original_name).suffix.lower()
     if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
@@ -516,22 +514,18 @@ def account_view(request):
         return redirect("login")
 
     user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
-    past_listings = _get_past_listings(user)
     unread_count = Message.objects.filter(receiver=user, is_read=False).count()
-    active_tab = "past" if request.GET.get("tab") == "past" else "active"
 
     context = base_context()
     context.update({
         "user": user,
         "user_listings": user_listings,
-        "past_listings": past_listings,
         "unread_count": unread_count,
-        "active_tab": active_tab,
     })
     return render(request, "marketplace/account.html", context)
 
 
-def past_listings_view(request):
+def past_listings(request):
     user = _get_logged_in_user(request)
     if not user:
         return redirect("login")
@@ -539,20 +533,16 @@ def past_listings_view(request):
     user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
     past_listings = _get_past_listings(user)
     unread_count = Message.objects.filter(receiver=user, is_read=False).count()
-    market_user = request.user
-    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
-    unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
 
     context = base_context()
     context.update({
-        "user": request.user,
-        "market_user": market_user,
+        "user": user,
         "user_listings": user_listings,
         "past_listings": past_listings,
         "unread_count": unread_count,
         "active_tab": "past",
     })
-    return render(request, "marketplace/account.html", context)
+    return render(request, "marketplace/past_listings.html", context)
 
 def verify_student(request):
     context = base_context()
