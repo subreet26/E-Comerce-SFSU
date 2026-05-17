@@ -78,7 +78,7 @@
         <!-- Product image -->
         <div class="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
           {% if listing.main_picture_url %}
-            <img src="{% static listing.main_picture_url %}"
+            <img src="{{ listing.main_picture_url }}"
                  alt="{{ listing.title }}"
                  class="h-72 w-full object-cover lg:h-80">
           {% else %}
@@ -91,7 +91,7 @@
         </div>
 
         <!-- Additional images (if your model supports them) -->
-        {% if listing.images.all %}
+        {% comment %} {% if listing.images.all %}
         <div class="grid grid-cols-4 gap-2">
           {% for img in listing.images.all %}
           <div class="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 cursor-pointer hover:ring-2 hover:ring-slate-400 transition">
@@ -99,7 +99,7 @@
           </div>
           {% endfor %}
         </div>
-        {% endif %}
+        {% endif %} {% endcomment %}
 
         <!-- Send Trade Offer button -->
         {% if user.is_authenticated and market_user != listing.seller %}

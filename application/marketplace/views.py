@@ -375,12 +375,15 @@ def create_listing_view(request):
         category_id = request.POST.get("category", "")
         main_picture_url = request.POST.get("main_picture_url", "").strip()
 
-        # Handle uploaded image files — use the first image as thumbnail
+        # Handle uploaded image files — save all; first becomes the thumbnail
         uploaded_images = request.FILES.getlist("images")
-        if uploaded_images:
-            saved_url = _save_uploaded_image(uploaded_images[0])
-            if saved_url:
-                thumbnail_url = saved_url
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
 
         if not title:
             messages.error(request, "Title is required.")
@@ -452,6 +455,15 @@ def edit_listing_view(request, listing_id):
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
         main_picture_url = request.POST.get("main_picture_url", "").strip()
+        # Handle uploaded image files — save all; first becomes the thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
         if main_picture_url:
             listing.main_picture_url = main_picture_url
 
@@ -466,6 +478,8 @@ def edit_listing_view(request, listing_id):
         except (Category.DoesNotExist, ValueError):
             pass
 
+        if request.POST.get("clear_main_picture") == "1" and not main_picture_url:
+            listing.main_picture_url = None
         listing.save()
         messages.success(request, "Listing updated!")
         return redirect("listing_detail", listing_id=listing.listing_id)
