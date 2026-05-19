@@ -513,12 +513,12 @@ def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
-    unread_count = Message.objects.filter(receiver=user, is_read=False).count()
+    user_listings = Listing.objects.filter(seller=request.user).order_by("-created_at")
+    unread_count = Message.objects.filter(receiver=request.user, is_read=False).count()
 
     context = base_context()
     context.update({
-        "user": user,
+        "user": request.user,
         "user_listings": user_listings,
         "unread_count": unread_count,
     })
