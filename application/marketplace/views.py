@@ -2,14 +2,24 @@
 # View functions for the marketplace app.
 # Created by Subreet Singh on 04-09-2026
 
+import os
+import uuid
+from pathlib import Path
+
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import IntegrityError
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+from django.urls import reverse
 from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
 
@@ -23,6 +33,29 @@ CONDITION_CHOICES = [
     ("fair", "Fair"),
     ("poor", "Poor"),
 ]
+
+
+def _save_uploaded_image(image_file):
+
+    if not image_file:
+        return None
+
+    original_name = image_file.name or "image"
+    ext = Path(original_name).suffix.lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+        ext = ".jpg"
+
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+
+    save_dir = settings.MEDIA_ROOT
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, unique_name)
+
+    with open(save_path, "wb") as f:
+        for chunk in image_file.chunks():
+            f.write(chunk)
+
+    return f"{settings.MEDIA_URL}{unique_name}"
 
 
 def base_context():
@@ -52,11 +85,21 @@ def get_marketplace_user(auth_user):
     changed_fields = []
 
     if not getattr(auth_user, "sfsu_email", None):
+        candidate_emails = []
+
         inferred_email = (auth_user.email or "").strip().lower()
-        if not inferred_email:
-            inferred_email = f"{auth_user.username}@sfsu.edu"
-        auth_user.sfsu_email = inferred_email
-        changed_fields.append("sfsu_email")
+        if inferred_email:
+            candidate_emails.append(inferred_email)
+
+        fallback_email = f"{auth_user.username}@sfsu.edu"
+        if fallback_email not in candidate_emails:
+            candidate_emails.append(fallback_email)
+
+        for candidate_email in candidate_emails:
+            if not User.objects.filter(sfsu_email__iexact=candidate_email).exclude(pk=auth_user.pk).exists():
+                auth_user.sfsu_email = candidate_email
+                changed_fields.append("sfsu_email")
+                break
 
     if not (auth_user.email or "").strip():
         auth_user.email = auth_user.sfsu_email
@@ -72,7 +115,10 @@ def get_marketplace_user(auth_user):
         changed_fields.append("role")
 
     if changed_fields:
-        auth_user.save(update_fields=changed_fields)
+        try:
+            auth_user.save(update_fields=changed_fields)
+        except IntegrityError:
+            pass
 
     return auth_user
 
@@ -317,7 +363,7 @@ def create_listing_view(request):
         })
         return ctx
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
@@ -327,7 +373,14 @@ def create_listing_view(request):
         status = request.POST.get("status", "active")
         condition = request.POST.get("condition", "good")
         category_id = request.POST.get("category", "")
-        thumbnail_url = request.POST.get("thumbnail_url", "").strip()
+        main_picture_url = request.POST.get("main_picture_url", "").strip()
+
+        # Handle uploaded image files — use the first image as thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        if uploaded_images:
+            saved_url = _save_uploaded_image(uploaded_images[0])
+            if saved_url:
+                thumbnail_url = saved_url
 
         if not title:
             messages.error(request, "Title is required.")
@@ -356,7 +409,7 @@ def create_listing_view(request):
             category=cat,
             seller=market_user,
             intent=status,
-            #thumbnail_url=thumbnail_url or None,
+            main_picture_url=main_picture_url or None,
         )
         listing.save()
         messages.success(request, "Listing created!")
@@ -384,17 +437,23 @@ def edit_listing_view(request, listing_id):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
     listing = get_object_or_404(Listing, listing_id=listing_id, seller=market_user)
 
     if request.method == "POST":
+        # Handle delete action
+        if request.POST.get("_action") == "delete":
+            listing.delete()
+            messages.success(request, "Listing deleted.")
+            return redirect("account")
+
         listing.title = request.POST.get("title", listing.title).strip()
         listing.description = request.POST.get("description", listing.description).strip()
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
-        thumbnail_url = request.POST.get("thumbnail_url", "").strip()
-        if thumbnail_url:
-            listing.thumbnail_url = thumbnail_url
+        main_picture_url = request.POST.get("main_picture_url", "").strip()
+        if main_picture_url:
+            listing.main_picture_url = main_picture_url
 
         try:
             listing.price = round(float(request.POST.get("price", listing.price)), 2)
@@ -427,7 +486,7 @@ def listing_detail_view(request, listing_id):
         Listing.objects.select_related("category", "seller"),
         listing_id=listing_id
     )
-    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
+    market_user = request.user if request.user.is_authenticated else None
     context = base_context()
     context.update({
         "listing": listing,
@@ -444,7 +503,7 @@ def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
     unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
     
     user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
@@ -520,69 +579,285 @@ def past_listings(request):
 # --- Messaging ---
 
 def chat_view(request):
-    user = request.user
     if not request.user.is_authenticated:
         return redirect("login")
 
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
 
-    # Get all conversations (unique users this user has messaged with)
-    sent = Message.objects.filter(sender=market_user).values_list("receiver_id", flat=True)
-    received = Message.objects.filter(receiver=market_user).values_list("sender_id", flat=True)
-    contact_ids = set(list(sent) + list(received))
-    contacts = User.objects.filter(id__in=contact_ids)
+    # Build threads grouped by (listing, other_user). This keeps chat scoped to listings.
+    thread_map = {}
+    message_qs = (
+        Message.objects
+        .filter(Q(sender=market_user) | Q(receiver=market_user), listing__isnull=False)
+        .select_related("listing", "sender", "receiver")
+        .order_by("created_at")
+    )
 
-    # If a specific conversation is selected
+    for msg in message_qs:
+        other_user = msg.receiver if msg.sender_id == market_user.id else msg.sender
+        key = (msg.listing_id, other_user.id)
+
+        entry = thread_map.get(key)
+        if entry is None:
+            entry = {
+                "listing": msg.listing,
+                "other_user": other_user,
+                "last_message": msg,
+                "unread_count": 0,
+            }
+            thread_map[key] = entry
+
+        # Track last message
+        if msg.created_at >= entry["last_message"].created_at:
+            entry["last_message"] = msg
+
+        # Unread count for current user
+        if msg.receiver_id == market_user.id and not msg.is_read:
+            entry["unread_count"] += 1
+
+    threads = sorted(
+        thread_map.values(),
+        key=lambda t: (t["last_message"].created_at, t["last_message"].message_id),
+        reverse=True,
+    )
+
+    # Active thread selection
+    active_listing_id = request.GET.get("listing")
     other_user_id = request.GET.get("with")
     conversation = []
     other_user = None
+    active_listing = None
 
-    if other_user_id:
+    if active_listing_id and other_user_id:
         try:
-            other_user = User.objects.get(id=other_user_id)
-            conversation = Message.objects.filter(
-                (Q(sender=market_user, receiver=other_user) | Q(sender=other_user, receiver=market_user))
-            ).order_by("created_at")
-            # Mark messages as read
-            conversation.filter(receiver=market_user, is_read=False).update(is_read=True)
-        except User.DoesNotExist:
-            pass
+            active_listing = Listing.objects.select_related("seller").get(listing_id=int(active_listing_id))
+            other_user = User.objects.get(id=int(other_user_id))
 
-    if request.method == "POST" and other_user:
-        content = request.POST.get("content", "").strip()
-        listing_id = request.POST.get("listing_id")
+            # Only allow access to listing-scoped thread where the user is a participant
+            is_valid_pair = (
+                (market_user.id == active_listing.seller_id and other_user.id != active_listing.seller_id)
+                or (market_user.id != active_listing.seller_id and other_user.id == active_listing.seller_id)
+            )
+            if not is_valid_pair:
+                active_listing = None
+                other_user = None
+            else:
+                conversation = (
+                    Message.objects
+                    .filter(
+                        Q(sender=market_user, receiver=other_user) | Q(sender=other_user, receiver=market_user),
+                        listing=active_listing,
+                    )
+                    .select_related("sender", "receiver")
+                    .order_by("created_at")
+                )
+                conversation.filter(receiver=market_user, is_read=False).update(is_read=True)
+        except (ValueError, Listing.DoesNotExist, User.DoesNotExist):
+            active_listing = None
+            other_user = None
+
+    if request.method == "POST" and other_user and active_listing:
+        content = (request.POST.get("content") or "").strip()
         if content:
-            msg = Message(sender=market_user, receiver=other_user, content=content)
-            if listing_id:
-                try:
-                    msg.listing = Listing.objects.get(listing_id=listing_id)
-                except Listing.DoesNotExist:
-                    pass
-            msg.save()
-            return redirect(f"/chat/?with={other_user.pk}")
+            # Enforce: buyers initiate, sellers may reply only after a buyer message exists.
+            if active_listing.seller_id == market_user.id:
+                buyer_id = other_user.id
+                if buyer_id == active_listing.seller_id:
+                    messages.error(request, "Invalid conversation.")
+                    return redirect("chat")
+
+                buyer_initiated = Message.objects.filter(
+                    listing=active_listing,
+                    sender_id=buyer_id,
+                    receiver_id=market_user.id,
+                ).exists()
+                if not buyer_initiated:
+                    messages.error(request, "Only buyers can initiate a new chat about a listing.")
+                    return redirect("chat")
+            else:
+                # Buyer can only message the listing's seller
+                if other_user.id != active_listing.seller_id:
+                    messages.error(request, "You can only message the seller for this listing.")
+                    return redirect("chat")
+
+            Message.objects.create(
+                sender=market_user,
+                receiver=other_user,
+                listing=active_listing,
+                content=content,
+            )
+            return redirect(f"/chat/?listing={active_listing.listing_id}&with={other_user.pk}")
 
     context = base_context()
     context.update({
         "user": market_user,
-        "contacts": contacts,
+        "threads": threads,
         "conversation": conversation,
         "other_user": other_user,
+        "active_listing": active_listing,
+        "active_listing_id": int(active_listing_id) if (active_listing_id and str(active_listing_id).isdigit()) else None,
+        "active_other_user_id": int(other_user_id) if (other_user_id and str(other_user_id).isdigit()) else None,
     })
     return render(request, "marketplace/chat.html", context)
 
 
+@require_GET
+def chat_poll_view(request):
+    """Return new messages for the active listing-scoped thread.
+
+    Query params:
+      - listing: listing_id
+      - with: other user's id
+      - after_id: last message_id currently on the page
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "auth_required"}, status=401)
+
+    market_user = request.user
+
+    raw_listing_id = request.GET.get("listing")
+    raw_other_user_id = request.GET.get("with")
+    raw_after_id = request.GET.get("after_id")
+
+    try:
+        listing_id = int(raw_listing_id)
+        other_user_id = int(raw_other_user_id)
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "invalid_params"}, status=400)
+
+    after_id = 0
+    try:
+        if raw_after_id:
+            after_id = int(raw_after_id)
+    except (TypeError, ValueError):
+        after_id = 0
+
+    listing = get_object_or_404(Listing, listing_id=listing_id)
+    other_user = get_object_or_404(User, id=other_user_id)
+
+    # Must be part of this listing chat
+    is_valid_pair = (
+        (market_user.id == listing.seller_id and other_user.id != listing.seller_id)
+        or (market_user.id != listing.seller_id and other_user.id == listing.seller_id)
+    )
+    if not is_valid_pair:
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    new_messages = (
+        Message.objects
+        .filter(
+            Q(sender=market_user, receiver=other_user) | Q(sender=other_user, receiver=market_user),
+            listing=listing,
+            message_id__gt=after_id,
+        )
+        .select_related("sender", "receiver")
+        .order_by("created_at")[:50]
+    )
+
+    # Mark newly fetched incoming messages as read
+    Message.objects.filter(
+        message_id__in=[m.message_id for m in new_messages if m.receiver_id == market_user.id and not m.is_read]
+    ).update(is_read=True)
+
+    payload = {
+        "messages": [
+            {
+                "id": m.message_id,
+                "sender_id": m.sender_id,
+                "content": m.content,
+                "created_at": timezone.localtime(m.created_at).isoformat(),
+                "created_at_display": timezone.localtime(m.created_at).strftime("%b %d, %I:%M %p"),
+                "is_outgoing": m.sender_id == market_user.id,
+            }
+            for m in new_messages
+        ]
+    }
+
+    return JsonResponse(payload)
+
+
+@require_GET
+def chat_threads_poll_view(request):
+    """Return listing-scoped thread summaries for the logged-in user.
+
+    Used by the chat sidebar to refresh unread badges/timestamps.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "auth_required"}, status=401)
+
+    market_user = request.user
+
+    thread_map = {}
+    message_qs = (
+        Message.objects
+        .filter(Q(sender=market_user) | Q(receiver=market_user), listing__isnull=False)
+        .select_related("listing", "sender", "receiver")
+        .order_by("created_at")
+    )
+
+    for msg in message_qs:
+        other_user = msg.receiver if msg.sender_id == market_user.id else msg.sender
+        key = (msg.listing_id, other_user.id)
+
+        entry = thread_map.get(key)
+        if entry is None:
+            entry = {
+                "listing": msg.listing,
+                "other_user": other_user,
+                "last_message": msg,
+                "unread_count": 0,
+            }
+            thread_map[key] = entry
+
+        if msg.created_at >= entry["last_message"].created_at:
+            entry["last_message"] = msg
+
+        if msg.receiver_id == market_user.id and not msg.is_read:
+            entry["unread_count"] += 1
+
+    threads = sorted(
+        thread_map.values(),
+        key=lambda t: (t["last_message"].created_at, t["last_message"].message_id),
+        reverse=True,
+    )
+
+    payload = {
+        "threads": [
+            {
+                "listing_id": t["listing"].listing_id,
+                "listing_title": t["listing"].title,
+                "other_user_id": t["other_user"].id,
+                "other_user_name": (t["other_user"].get_full_name() or t["other_user"].username),
+                "last_message_id": t["last_message"].message_id,
+                "last_message_content": t["last_message"].content,
+                "last_message_created_at": timezone.localtime(t["last_message"].created_at).isoformat(),
+                "last_message_created_at_display": timezone.localtime(t["last_message"].created_at).strftime("%b %d, %I:%M %p"),
+                "unread_count": t["unread_count"],
+            }
+            for t in threads
+        ]
+    }
+
+    return JsonResponse(payload)
+
+
 def send_message_view(request, listing_id):
     """Start a conversation about a listing (from listing detail page)."""
-    user = request.user
     if not request.user.is_authenticated:
         return redirect("login")
 
     listing = get_object_or_404(Listing, listing_id=listing_id)
-    market_user = get_marketplace_user(request.user)
+    market_user = request.user
+
+    chat_url = f"{reverse('chat')}?listing={listing.listing_id}&with={listing.seller_id}"
+
+    # Seller cannot start a conversation about their own listing.
+    if listing.seller_id == market_user.id:
+        return redirect("listing_detail", listing_id=listing_id)
 
     if request.method == "POST":
-        content = request.POST.get("content", "").strip()
-        if content and listing.seller != market_user:
+        content = (request.POST.get("content") or "").strip()
+        if content:
             Message.objects.create(
                 sender=market_user,
                 receiver=listing.seller,
@@ -590,4 +865,6 @@ def send_message_view(request, listing_id):
                 content=content,
             )
             messages.success(request, "Message sent!")
-    return redirect("listing_detail", listing_id=listing_id)
+
+    # Always land user in the listing-scoped chat thread.
+    return redirect(chat_url)

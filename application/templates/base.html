@@ -64,8 +64,19 @@
 
             <div class="absolute right-0 top-full z-40 mt-2 w-44 rounded-xl border bg-white p-2 shadow-lg">
               {% if request.user.is_authenticated %}
-                <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
-                <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                <a href="{% url 'account' %}" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                  <span class="flex items-center gap-2">
+                    Account
+                  </span>
+                </a>
+                <a href="{% url 'chat' %}" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                  <span>Messages</span>
+                  {% if unread_count %}
+                    <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                      {% if unread_count > 99 %}99+{% else %}{{ unread_count }}{% endif %}
+                    </span>
+                  {% endif %}
+                </a>
                 <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
               {% else %}
               <a href="{% url 'create_listing' %}" class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100">Create Listing</a>
@@ -140,7 +151,7 @@
           {% if request.user.is_authenticated %}
             <div class="hidden items-center gap-6 md:flex">
               <div class="relative group">
-                <button class="flex items-center gap-1 text-sm font-medium hover:text-slate-600">
+                <button class="relative flex items-center gap-1 text-sm font-medium hover:text-slate-600">
                   Account
                   <span class="text-xs">▼</span>
                 </button>
@@ -148,7 +159,14 @@
                 <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
                   <div class="rounded-xl border bg-white p-2 shadow-lg">
                     <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
-                    <a href="{% url 'chat' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Messages</a>
+                    <a href="{% url 'chat' %}" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                      <span>Messages</span>
+                      {% if unread_count %}
+                        <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                          {% if unread_count > 99 %}99+{% else %}{{ unread_count }}{% endif %}
+                        </span>
+                      {% endif %}
+                    </a>
                     <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
                   </div>
                 </div>

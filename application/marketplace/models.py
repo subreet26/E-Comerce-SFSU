@@ -100,6 +100,7 @@ class User(AbstractUser):
         full_name = ' '.join([name for name in [self.first_name, self.last_name] if name])
         return full_name.strip() or self.username
 
+
 class Category(models.Model):
     category_id = models.AutoField(primary_key=True, db_column='category_id')
     category_name = models.CharField(max_length=128, unique=True)

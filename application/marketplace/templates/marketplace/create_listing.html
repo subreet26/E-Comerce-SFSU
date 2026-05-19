@@ -41,29 +41,44 @@ create_listing.html
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 
+      <!-- Two-column layout -->
       <div class="flex gap-0 divide-x divide-slate-100">
 
         <!-- Left column: Image Upload -->
         <div class="p-6 flex flex-col" style="width: 480px; flex-shrink: 0;">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400 mb-4">Photo</h2>
+          <div class="flex items-baseline justify-between mb-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photos</h2>
+            <p class="text-xs text-slate-400"><span id="image-count">0</span> / 5 images</p>
+          </div>
+
+          <!-- Thumbnails row -->
+          <div id="thumbnail-row" class="flex gap-2 flex-wrap mb-3"></div>
+
+          <!-- Drop zone (hidden once limit reached) -->
           <div id="drop-zone"
-               class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center cursor-pointer transition hover:border-slate-400 hover:bg-slate-100 flex-1"
-               style="min-height: 220px;">
-            <input id="image-input" type="file" name="image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+              class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center cursor-pointer transition hover:border-slate-400 hover:bg-slate-100 flex-1"
+              style="min-height: 180px;">
+            <input id="image-input" type="file" name="images" accept="image/*" multiple
+                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
             <div id="upload-icon" class="px-4">
               <svg class="mx-auto h-10 w-10 text-slate-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload an image</p>
-              <p class="text-xs text-slate-400">PNG, JPG up to 10MB</p>
+              <p class="mt-2 text-sm font-medium text-slate-600">Click or drag &amp; drop to upload images</p>
+              <p class="text-xs text-slate-400">PNG, JPG up to 10MB each · Max 5 images</p>
             </div>
-            <img id="image-preview" class="hidden w-full h-full object-cover rounded-xl absolute inset-0" alt="Preview">
           </div>
+
+          <!-- Hidden inputs container (populated by JS) -->
+          <div id="hidden-inputs"></div>
         </div>
 
         <!-- Right column: Form Fields -->
         <div class="p-6 space-y-4 flex-1 min-w-0">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Listing Details</h2>
+          <div class="flex items-baseline justify-between mb-1">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Listing Details</h2>
+            <p class="text-xs text-slate-400"><span class="text-red-500 font-medium">*</span> Required fields</p>
+          </div>
 
           <!-- Title -->
           <div>
@@ -101,16 +116,19 @@ create_listing.html
             </div>
             <div>
               <label for="category" class="block text-sm font-medium text-slate-700 mb-1">Category <span class="text-red-500">*</span></label>
-              <select id="category" name="category" required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-                <option value="" disabled selected>Select a category</option>
-                {% for cat in categories %}
-                  <option value="{{ cat.category_id }}"
-                    {% if form.category == cat.category_id|stringformat:"s" %}selected{% endif %}>
-                    {{ cat.category_name }}
-                  </option>
-                {% endfor %}
-              </select>
+              <div class="relative">
+                <select id="category" name="category" required
+                  class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
+                  <option value="" disabled selected>Select a category</option>
+                  {% for cat in categories %}
+                    <option value="{{ cat.category_id }}"
+                      {% if form.category == cat.category_id|stringformat:"s" %}selected{% endif %}>
+                      {{ cat.category_name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <svg class="pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
             </div>
           </div>
 
@@ -118,53 +136,61 @@ create_listing.html
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="listing_type" class="block text-sm font-medium text-slate-700 mb-1">Listing Type <span class="text-red-500">*</span></label>
-              <select id="listing_type" name="listing_type" required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-                <option value="" disabled selected>Select type</option>
-                {% for value, label in listing_types %}
-                  <option value="{{ value }}"
-                    {% if form.listing_type == value %}selected{% endif %}>
-                    {{ label }}
-                  </option>
-                {% endfor %}
-              </select>
+              <div class="relative">
+                <select id="listing_type" name="listing_type" required
+                  class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
+                  <option value="" disabled selected>Select type</option>
+                  {% for value, label in listing_types %}
+                    <option value="{{ value }}"
+                      {% if form.listing_type == value %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <svg class="pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
             </div>
             <div>
-              <!-- Intent: for_sale or wanted — stored in listing.intent (db column: status) -->
               <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Intent <span class="text-red-500">*</span></label>
-              <select id="status" name="status" required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-                <option value="" disabled selected>Select intent</option>
-                {% for value, label in listing_intents %}
-                  <option value="{{ value }}"
-                    {% if form.status == value %}selected{% endif %}>
-                    {{ label }}
-                  </option>
-                {% endfor %}
-              </select>
+              <div class="relative">
+                <select id="status" name="status" required
+                  class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
+                  <option value="" disabled selected>Select intent</option>
+                  {% for value, label in listing_intents %}
+                    <option value="{{ value }}"
+                      {% if form.status == value %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <svg class="pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
             </div>
           </div>
 
           <!-- Condition -->
           <div>
             <label for="condition" class="block text-sm font-medium text-slate-700 mb-1">Condition</label>
-            <select id="condition" name="condition"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
-              <option value="" disabled selected>Select condition</option>
-              {% for value, label in conditions %}
-                <option value="{{ value }}"
-                  {% if form.condition == value %}selected{% endif %}>
-                  {{ label }}
-                </option>
-              {% endfor %}
-            </select>
+            <div class="relative">
+              <select id="condition" name="condition"
+                class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 transition">
+                <option value="" disabled selected>Select condition</option>
+                {% for value, label in conditions %}
+                  <option value="{{ value }}"
+                    {% if form.condition == value %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+              <svg class="pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="flex items-center justify-between gap-3 bg-slate-50 px-6 py-4 border-t border-slate-100">
-        <a href="{% url 'marketplace_home' %}"
-           class="rounded-lg px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200 transition">
+        <a href="#" onclick="history.back(); return false;"
+          class="rounded-lg px-5 py-2.5 text-sm font-medium text-red-600 border border-red-200 bg-red-50 hover:bg-red-600 hover:text-white hover:border-red-600 hover:scale-105 active:scale-95 transition-all duration-150">
           Cancel
         </a>
         <button type="submit"
@@ -178,21 +204,5 @@ create_listing.html
 </div>
 
 <!-- Image Upload Script -->
-<script>
-  const input = document.getElementById('image-input');
-  const preview = document.getElementById('image-preview');
-  const icon = document.getElementById('upload-icon');
-  input.addEventListener('change', function () {
-    const file = this.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
-        icon.classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-</script>
+<script type="module" src="{% static 'js/image-preview.js' %}"></script>
 {% endblock %}

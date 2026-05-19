@@ -21,4 +21,6 @@ urlpatterns = [
     path("listings/<int:listing_id>/", views.listing_detail_view, name="listing_detail"),
     path("listings/<int:listing_id>/message/", views.send_message_view, name="send_message"),
     path("chat/", views.chat_view, name="chat"),
+    path("chat/poll/", views.chat_poll_view, name="chat_poll"),
+    path("chat/threads/poll/", views.chat_threads_poll_view, name="chat_threads_poll"),
 ]
