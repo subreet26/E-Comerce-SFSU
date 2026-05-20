@@ -123,6 +123,12 @@ class ListingIntent(models.TextChoices):
     WANTED = 'wanted', 'Wanted'
 
 
+class ApprovalStatus(models.TextChoices):
+    PENDING = 'pending', 'Pending'
+    APPROVED = 'approved', 'Approved'
+    REJECTED = 'rejected', 'Rejected'
+
+
 class PickupInformationVisibility(models.TextChoices):
     PUBLIC = 'public', 'Public'
     BUYERS_ONLY = 'buyers_only', 'Buyers Only'
@@ -142,6 +148,21 @@ class Listing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=200)
+    approval_status = models.CharField(
+        max_length=16,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING,
+        db_index=True,
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_listings',
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
 
     class Meta:
         db_table = 'listing'

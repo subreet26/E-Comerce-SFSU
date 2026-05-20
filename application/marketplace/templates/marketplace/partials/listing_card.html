@@ -31,6 +31,11 @@ listing_card.html
     <h3 class="truncate font-semibold text-slate-900">{{ listing.title }}</h3>
 
     <div class="mt-2 flex flex-wrap gap-1.5 text-xs font-medium">
+      {% if listing.approval_status == "pending" %}
+        <span class="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">Pending Approval</span>
+      {% elif listing.approval_status == "rejected" %}
+        <span class="rounded-full bg-red-50 px-2.5 py-1 text-red-700">Rejected</span>
+      {% endif %}
       <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
         {{ listing.get_listing_type_display }}
       </span>

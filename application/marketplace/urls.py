@@ -16,6 +16,9 @@ urlpatterns = [
     
     path("profile/<str:username>/", views.profile_view, name="profile"),
 
+    path("staff/listings/<int:listing_id>/approve/", views.admin_approve_listing, name="admin_approve_listing"),
+    path("staff/listings/<int:listing_id>/reject/", views.admin_reject_listing, name="admin_reject_listing"),
+
     path("listings/new/", views.create_listing_view, name="create_listing"),
     path("listings/<int:listing_id>/edit/", views.edit_listing_view, name="edit_listing"),
     path("listings/<int:listing_id>/", views.listing_detail_view, name="listing_detail"),

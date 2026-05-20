@@ -142,6 +142,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # Create roles
         student_role, _ = Role.objects.get_or_create(role_name="student")
+        Role.objects.get_or_create(role_name="admin")
 
         # Create a seed seller user with hashed password
         seller, created = User.objects.get_or_create(
