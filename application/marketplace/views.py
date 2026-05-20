@@ -35,6 +35,10 @@ CONDITION_CHOICES = [
     ("poor", "Poor"),
 ]
 
+# Live listings use ListingIntent; legacy rows may still have status/intent "active".
+LIVE_LISTING_INTENTS = frozenset(ListingIntent.values)
+LEGACY_LIVE_LISTING_STATUS = "active"
+
 
 def _is_admin(user):
     if not user or not getattr(user, "is_authenticated", False):
@@ -53,7 +57,6 @@ def _save_uploaded_image(image_file):
 
     if not image_file:
         return None
-
     original_name = image_file.name or "image"
     ext = Path(original_name).suffix.lower()
     if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
@@ -534,7 +537,14 @@ def listing_detail_view(request, listing_id):
 
 # --- Dashboard/Account ---
 
-# Users own account page
+def _get_past_listings(user):
+    return Listing.objects.filter(seller=user).exclude(
+        intent__in=LIVE_LISTING_INTENTS,
+    ).exclude(
+        intent=LEGACY_LIVE_LISTING_STATUS,
+    ).order_by("-created_at")
+
+
 def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
@@ -560,7 +570,6 @@ def account_view(request):
     context = base_context()
     context.update({
         "user": request.user,
-        "market_user": market_user,
         "user_listings": user_listings,
         "unread_count": unread_count,
         "product_listings": product_listings,
