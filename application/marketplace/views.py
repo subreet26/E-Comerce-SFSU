@@ -279,8 +279,8 @@ def search_results_view(request):
     price_min = _parse_decimal(request.GET.get("price_min"))
     price_max = _parse_decimal(request.GET.get("price_max"))
 
-    results = Listing.objects.select_related("category").all()
-    
+    results = _visible_listings_qs().select_related("category")
+
     if query:
         results = results.filter(
             Q(title__icontains=query)
