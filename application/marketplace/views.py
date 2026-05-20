@@ -378,12 +378,15 @@ def create_listing_view(request):
         category_id = request.POST.get("category", "")
         main_picture_url = request.POST.get("main_picture_url", "").strip()
 
-        # Handle uploaded image files — use the first image as thumbnail
+        # Handle uploaded image files — save all; first becomes the thumbnail
         uploaded_images = request.FILES.getlist("images")
-        if uploaded_images:
-            saved_url = _save_uploaded_image(uploaded_images[0])
-            if saved_url:
-                thumbnail_url = saved_url
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
 
         if not title:
             messages.error(request, "Title is required.")
@@ -455,6 +458,15 @@ def edit_listing_view(request, listing_id):
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
         main_picture_url = request.POST.get("main_picture_url", "").strip()
+        # Handle uploaded image files — save all; first becomes the thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
         if main_picture_url:
             listing.main_picture_url = main_picture_url
 
@@ -469,6 +481,8 @@ def edit_listing_view(request, listing_id):
         except (Category.DoesNotExist, ValueError):
             pass
 
+        if request.POST.get("clear_main_picture") == "1" and not main_picture_url:
+            listing.main_picture_url = None
         listing.save()
         messages.success(request, "Listing updated!")
         return redirect("listing_detail", listing_id=listing.listing_id)
@@ -513,43 +527,70 @@ def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    user_listings = Listing.objects.filter(seller=request.user).order_by("-created_at")
-    unread_count = Message.objects.filter(receiver=request.user, is_read=False).count()
-
+    market_user = request.user
+    unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
+    
+    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
+    
     context = base_context()
     context.update({
         "user": request.user,
         "user_listings": user_listings,
         "unread_count": unread_count,
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
     })
     return render(request, "marketplace/account.html", context)
 
-
-def past_listings(request):
-    user = _get_logged_in_user(request)
-    if not user:
-        return redirect("login")
-
-    user_listings = Listing.objects.filter(seller=user).order_by("-created_at")
-    past_listings = _get_past_listings(user)
-    unread_count = Message.objects.filter(receiver=user, is_read=False).count()
+# Public facing profile page
+def profile_view(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
+    
+    user_listings = Listing.objects.filter(seller=profile_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
 
     context = base_context()
     context.update({
-        "user": user,
+        "profile_user": profile_user,
+        "market_user": market_user,
         "user_listings": user_listings,
-        "past_listings": past_listings,
-        "unread_count": unread_count,
-        "active_tab": "past",
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
     })
-    return render(request, "marketplace/past_listings.html", context)
+    return render(request, "marketplace/profile.html", context)
 
 def verify_student(request):
     context = base_context()
     return render(request, "marketplace/verify_student.html", context)
 
+
 def edit_profile(request):
     context = base_context()
+    if request.method == 'POST':
+        # Update User model fields
+        request.user.first_name = request.POST.get('first_name', '')
+        request.user.last_name = request.POST.get('last_name', '')
+        request.user.save()
+
+        # Update model fields
+        profile = request.user.profile
+
+        profile.avatar_url = request.POST.get('avatar_url', '')
+        profile.year = request.POST.get('year', '')
+        profile.major = request.POST.get('major', '')
+        profile.bio = request.POST.get('bio', '')
+        profile.save()
+        return redirect('account')
     return render(request, "marketplace/edit_profile.html", context)
 
 def past_listings(request):
