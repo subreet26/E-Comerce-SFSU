@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -18,9 +19,9 @@ from django.db import IntegrityError
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.urls import reverse
-from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
+from .models import ApprovalStatus, Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
 
 
@@ -33,6 +34,19 @@ CONDITION_CHOICES = [
     ("fair", "Fair"),
     ("poor", "Poor"),
 ]
+
+
+def _is_admin(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    role = getattr(user, "role", None)
+    return bool(role and role.role_name == "admin")
+
+
+def _visible_listings_qs():
+    return Listing.objects.filter(approval_status=ApprovalStatus.APPROVED)
 
 
 def _save_uploaded_image(image_file):
@@ -126,8 +140,8 @@ def get_marketplace_user(auth_user):
 def marketplace_home(request):
     context = base_context()
     context.update({
-        "recent_listings": Listing.objects.select_related("category", "seller").order_by("-created_at")[:8],
-        "popular_services": Listing.objects.select_related("category", "seller")
+        "recent_listings": _visible_listings_qs().select_related("category", "seller").order_by("-created_at")[:8],
+        "popular_services": _visible_listings_qs().select_related("category", "seller")
             .filter(listing_type="service", intent="for_sale")
             .exclude(description__exact="")
             .order_by("-created_at")[:4],
@@ -258,7 +272,7 @@ def search_results_view(request):
     intent       = (request.GET.get("intent") or "all").strip().lower()
     category     = (request.GET.get("category") or "all").strip()
 
-    listings = Listing.objects.select_related("category").all()
+    listings = _visible_listings_qs().select_related("category")
 
     if category != "all":
         listings = listings.filter(category__category_name=category)
@@ -289,7 +303,7 @@ def search_results_view(request):
     price_min = _parse_decimal(request.GET.get("price_min"))
     price_max = _parse_decimal(request.GET.get("price_max"))
 
-    results = Listing.objects.select_related('category').all()
+    results = _visible_listings_qs().select_related('category')
 
     if query:
         results = results.filter(
@@ -414,8 +428,7 @@ def create_listing_view(request):
             intent=status,
             main_picture_url=main_picture_url or None,
         )
-        listing.save()
-        messages.success(request, "Listing created!")
+        messages.success(request, "Listing submitted! It is pending admin approval.")
         return redirect("listing_detail", listing_id=listing.listing_id)
 
     context = base_context()
@@ -425,7 +438,9 @@ def create_listing_view(request):
 
 def category_listings_view(request, category_id):
     category = get_object_or_404(Category, pk=category_id)
-    listings = Listing.objects.select_related('category').filter(category_id=category_id).order_by('-created_at', '-listing_id')
+    listings = _visible_listings_qs().select_related('category').filter(
+        category_id=category_id,
+    ).order_by('-created_at', '-listing_id')
 
     return render(request, "marketplace/category_listings.html", {
         "page_title": f"{category.category_name} Listings",
@@ -500,7 +515,12 @@ def listing_detail_view(request, listing_id):
         Listing.objects.select_related("category", "seller"),
         listing_id=listing_id
     )
-    market_user = request.user if request.user.is_authenticated else None
+    viewer = request.user if request.user.is_authenticated else None
+    if listing.approval_status != ApprovalStatus.APPROVED:
+        is_owner = viewer and listing.seller_id == viewer.pk
+        if not is_owner and not _is_admin(viewer):
+            raise Http404
+    market_user = viewer
     context = base_context()
     context.update({
         "listing": listing,
@@ -525,7 +545,16 @@ def account_view(request):
     service_listings = user_listings.filter(listing_type="service")
     
     active_tab = request.GET.get("tab", "products")
-    
+
+    is_admin = _is_admin(market_user)
+    pending_listings = []
+    if is_admin:
+        pending_listings = (
+            Listing.objects.filter(approval_status=ApprovalStatus.PENDING)
+            .select_related("category", "seller")
+            .order_by("created_at")
+        )
+
     context = base_context()
     context.update({
         "user": request.user,
@@ -535,6 +564,8 @@ def account_view(request):
         "product_listings": product_listings,
         "service_listings": service_listings,
         "active_tab": active_tab,
+        "is_admin": is_admin,
+        "pending_listings": pending_listings,
     })
     return render(request, "marketplace/account.html", context)
 
@@ -543,7 +574,7 @@ def profile_view(request, username):
     profile_user = get_object_or_404(User, username=username)
     market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
     
-    user_listings = Listing.objects.filter(seller=profile_user).order_by("-created_at")
+    user_listings = _visible_listings_qs().filter(seller=profile_user).order_by("-created_at")
     product_listings = user_listings.filter(listing_type="product")
     service_listings = user_listings.filter(listing_type="service")
     
@@ -588,6 +619,41 @@ def past_listings(request):
     context = base_context()
     return render(request, "marketplace/past_listings.html", context)
 
+
+# --- Admin listing approval ---
+
+@require_POST
+def admin_approve_listing(request, listing_id):
+    if not _is_admin(request.user):
+        raise Http404
+
+    listing = get_object_or_404(Listing, listing_id=listing_id)
+    listing.approval_status = ApprovalStatus.APPROVED
+    listing.approved_by = request.user
+    listing.approved_at = timezone.now()
+    listing.rejection_reason = ""
+    listing.save(update_fields=[
+        "approval_status", "approved_by", "approved_at", "rejection_reason",
+    ])
+    messages.success(request, f'"{listing.title}" has been approved.')
+    return redirect("account")
+
+
+@require_POST
+def admin_reject_listing(request, listing_id):
+    if not _is_admin(request.user):
+        raise Http404
+
+    listing = get_object_or_404(Listing, listing_id=listing_id)
+    listing.approval_status = ApprovalStatus.REJECTED
+    listing.approved_by = request.user
+    listing.approved_at = timezone.now()
+    listing.rejection_reason = request.POST.get("rejection_reason", "").strip()
+    listing.save(update_fields=[
+        "approval_status", "approved_by", "approved_at", "rejection_reason",
+    ])
+    messages.success(request, f'"{listing.title}" has been rejected.')
+    return redirect("account")
 
 
 # --- Messaging ---

@@ -1,6 +1,26 @@
 from django.contrib import admin
+from django.utils import timezone
 
-from .models import Category, Listing, Message, PickupInformation, Product, Role, Service, User
+from .models import ApprovalStatus, Category, Listing, Message, PickupInformation, Product, Role, Service, User
+
+
+@admin.action(description="Approve selected listings")
+def approve_selected_listings(modeladmin, request, queryset):
+    queryset.update(
+        approval_status=ApprovalStatus.APPROVED,
+        approved_by=request.user,
+        approved_at=timezone.now(),
+        rejection_reason="",
+    )
+
+
+@admin.action(description="Reject selected listings")
+def reject_selected_listings(modeladmin, request, queryset):
+    queryset.update(
+        approval_status=ApprovalStatus.REJECTED,
+        approved_by=request.user,
+        approved_at=timezone.now(),
+    )
 
 
 @admin.register(Role)
@@ -22,9 +42,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ('listing_id', 'title', 'price', 'listing_type', 'intent', 'category', 'condition', 'created_at')
-    list_filter = ('listing_type', 'condition', 'intent', 'category')
+    list_display = (
+        'listing_id', 'title', 'price', 'listing_type', 'intent',
+        'approval_status', 'category', 'condition', 'created_at',
+    )
+    list_filter = ('listing_type', 'condition', 'intent', 'approval_status', 'category')
     search_fields = ('title', 'description')
+    actions = [approve_selected_listings, reject_selected_listings]
 
 
 @admin.register(Message)

@@ -143,6 +143,78 @@ account.html
     <!-- RIGHT — Main content -->
     <div class="flex-1 space-y-6">
 
+      {% if is_admin %}
+      <!-- Admin: pending listings to approve -->
+      <section class="rounded-3xl bg-white p-8 shadow-sm">
+        <div class="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight">Pending Approvals</h2>
+            <p class="mt-1 text-sm text-slate-500">Review new listings submitted by users.</p>
+          </div>
+          <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            {{ pending_listings|length }} pending
+          </span>
+        </div>
+
+        {% if pending_listings %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in pending_listings %}
+              <article class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                <div class="relative">
+                  <img
+                    src="{% if listing.main_picture_url %}{{ listing.main_picture_url }}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+                    alt="{{ listing.title }}"
+                    class="h-40 w-full object-cover"
+                  />
+                  <span class="absolute bottom-2 left-2 rounded-md bg-slate-900 px-2 py-0.5 text-xs font-bold text-white">
+                    ${{ listing.price }}
+                  </span>
+                </div>
+                <div class="p-4">
+                  <div class="mb-2 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">Pending</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{{ listing.category.category_name }}</span>
+                  </div>
+                  <h3 class="truncate font-semibold text-slate-900">{{ listing.title }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ listing.get_listing_type_display }} · {{ listing.seller.sfsu_email|default:listing.seller.username }}
+                  </p>
+                  <p class="mt-2 line-clamp-2 text-sm text-slate-600">
+                    {{ listing.description|default:"No description." }}
+                  </p>
+
+                  <div class="mt-4 flex gap-2">
+                    <form method="post" action="{% url 'admin_approve_listing' listing.listing_id %}" class="flex-1">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        Approve
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'admin_reject_listing' listing.listing_id %}" class="flex-1">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
+                  <a href="{% url 'listing_detail' listing.listing_id %}"
+                     class="mt-3 block text-center text-xs font-semibold text-slate-500 hover:text-slate-900">
+                    View full listing →
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="rounded-2xl border bg-white p-8 text-center text-slate-600">
+            No listings are pending approval.
+          </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
       <!-- Stats row -->
       <div class="grid grid-cols-3 gap-4">
 
