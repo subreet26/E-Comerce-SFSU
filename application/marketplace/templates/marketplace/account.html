@@ -218,10 +218,17 @@ account.html
       <!-- Stats row -->
       <div class="grid grid-cols-3 gap-4">
 
-        <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold tracking-tight text-slate-900">
+        <div class="rounded-2xl p-5 text-center shadow-sm
+          {% if user_listings.count >= 1 %}
+          bg-green-100
+          {% else %}
+          bg-white
+          {% endif %}">
+
+          <p class="text-3xl font-bold tracking-tight text-slate-900 ">
             {{ user_listings.count }}
           </p>
+         
           <p class="mt-1 text-sm text-slate-500">Active Listings</p>
         </div>
 
@@ -295,7 +302,7 @@ account.html
         {% if active_tab == "products" %}
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {% for listing in product_listings %}
-              {% include "marketplace/partials/listing_card.html" with listing=listing %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
             {% endfor %}
           </div>
         {% endif %}
@@ -303,7 +310,7 @@ account.html
         {% if active_tab == "services" %}
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {% for listing in service_listings %}
-              {% include "marketplace/partials/listing_card.html" with listing=listing %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
             {% endfor %}
           </div>
         {% endif %}

@@ -46,7 +46,7 @@
       <div class="flex w-full flex-col gap-4 lg:w-80 lg:flex-shrink-0">
 
         <!-- Seller profile card -->
-        <a href="{% url 'account' %}"
+        <a href="{% url 'profile' listing.seller.username %}"
            class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:bg-slate-100">
           {% if listing.seller.profile.avatar %}
             <img src="{{ listing.seller.profile.avatar.url }}"
