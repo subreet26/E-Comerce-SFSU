@@ -2,6 +2,11 @@
 
 <article class="group h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
   <a href="{% url 'listing_detail' listing.pk %}" class="flex h-full flex-col" aria-label="View listing: {{ listing.title }}">
+    {% if listing.approval_status == "pending" %}
+      <span class="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 text-center">Pending Approval</span>
+    {% elif listing.approval_status == "rejected" %}
+      <span class="rounded-full bg-red-50 px-2.5 py-1 text-red-700 text-center">Rejected</span>
+    {% endif %}
     {% if listing.main_picture_url %}
       <img
         src="{{ listing.main_picture_url }}"

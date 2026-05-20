@@ -1,0 +1,191 @@
+<!--
+profile.html
+ Public profile page for viewing another user's marketplace profile.
+-->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Account | Alli-Trade{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-7xl px-6 py-10">
+
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-stretch">
+
+    <!-- LEFT — Public Profile Sidebar -->
+    <aside class="w-full lg:w-72 flex-shrink-0">
+      <div class="rounded-3xl bg-white p-6 shadow-sm">
+
+        <!-- Avatar -->
+        <div class="mb-4 flex justify-center">
+          {% if profile_user.profile.avatar %}
+            <img src="{{ profile_user.profile.avatar.url }}"
+                 alt="{{ profile_user.get_full_name }}"
+                 class="h-24 w-24 rounded-full object-cover ring-2 ring-slate-100">
+          {% else %}
+            <div class="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 ring-2 ring-slate-200">
+              <svg class="h-12 w-12 text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Name -->
+        <div class="mb-3 text-center">
+          <p class="text-lg font-bold tracking-tight text-slate-900">
+            {% if profile_user.get_full_name %}
+              {{ profile_user.get_full_name }}
+            {% else %}
+              {{ profile_user.username }}
+            {% endif %}
+          </p>
+
+          <p class="text-sm text-slate-500">
+            @{{ profile_user.username }}
+          </p>
+        </div>
+
+        <!-- Verification badge -->
+        <div class="mb-5 flex justify-center">
+          {% if profile_user.profile.is_verified %}
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              SFSU Verified
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Public profile fields -->
+        <div class="mb-5 space-y-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Year</p>
+            <p class="text-sm text-slate-700">
+              {% if profile_user.profile.year %}
+                {{ profile_user.profile.year }}
+              {% else %}
+                N/A
+              {% endif %}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Major</p>
+            <p class="text-sm text-slate-700">
+              {% if profile_user.profile.major %}
+                {{ profile_user.profile.major }}
+              {% else %}
+                N/A
+              {% endif %}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Bio</p>
+            <p class="text-sm leading-relaxed text-slate-700">
+              {% if profile_user.profile.bio %}
+                {{ profile_user.profile.bio }}
+              {% else %}
+                No bio yet.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT — Public Listings -->
+    <div class="flex-1 space-y-6">
+
+      <!-- Listings -->
+      <section class="rounded-3xl bg-white p-8 shadow-sm">
+
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold tracking-tight">
+            Listings by
+            {% if profile_user.get_full_name %}
+              {{ profile_user.get_full_name }}
+            {% else %}
+              {{ profile_user.username }}
+            {% endif %}
+          </h2>
+        </div>
+
+        {% if product_listings or service_listings %}
+
+          <!-- Tabs -->
+          <div class="mb-6 border-b border-slate-200">
+            <div class="flex gap-2">
+
+            {% if product_listings %}
+            <a href="?tab=products"
+              class="border-b-2 px-4 py-2 text-sm font-semibold
+                      {% if active_tab == 'products' %}
+                        border-slate-900 text-slate-900
+                      {% else %}
+                        border-transparent text-slate-500 hover:text-slate-900
+                      {% endif %}">
+              Products
+              <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                {{ product_listings.count }}
+              </span>
+            </a>
+            {% endif %}
+
+            {% if service_listings %}
+            <a href="?tab=services"
+              class="border-b-2 px-4 py-2 text-sm font-semibold
+                      {% if active_tab == 'services' %}
+                        border-slate-900 text-slate-900
+                      {% else %}
+                        border-transparent text-slate-500 hover:text-slate-900
+                      {% endif %}">
+              Services
+              <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                {{ service_listings.count }}
+              </span>
+            </a>
+            {% endif %}
+
+            </div>
+          </div>
+
+          <!-- Product Tab -->
+        {% if active_tab == "products" %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in product_listings %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if active_tab == "services" %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in service_listings %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% else %}
+
+          <div class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <div>
+              <p class="font-semibold text-slate-700">No active listings</p>
+              <p class="mt-1 text-sm text-slate-500">
+                This user does not have any active listings right now.
+              </p>
+            </div>
+          </div>
+
+        {% endif %}
+
+      </section>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

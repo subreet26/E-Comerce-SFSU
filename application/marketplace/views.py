@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -18,9 +19,9 @@ from django.db import IntegrityError
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.urls import reverse
-from .models import Category, Listing, ListingIntent, ListingType, Message, Role, User
+from .models import ApprovalStatus, Category, Listing, ListingIntent, ListingType, Message, Role, User
 from .forms import RegisterForm
 
 
@@ -34,12 +35,28 @@ CONDITION_CHOICES = [
     ("poor", "Poor"),
 ]
 
+# Live listings use ListingIntent; legacy rows may still have status/intent "active".
+LIVE_LISTING_INTENTS = frozenset(ListingIntent.values)
+LEGACY_LIVE_LISTING_STATUS = "active"
+
+
+def _is_admin(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    role = getattr(user, "role", None)
+    return bool(role and role.role_name == "admin")
+
+
+def _visible_listings_qs():
+    return Listing.objects.filter(approval_status=ApprovalStatus.APPROVED)
+
 
 def _save_uploaded_image(image_file):
 
     if not image_file:
         return None
-
     original_name = image_file.name or "image"
     ext = Path(original_name).suffix.lower()
     if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
@@ -126,8 +143,8 @@ def get_marketplace_user(auth_user):
 def marketplace_home(request):
     context = base_context()
     context.update({
-        "recent_listings": Listing.objects.select_related("category", "seller").order_by("-created_at")[:8],
-        "popular_services": Listing.objects.select_related("category", "seller")
+        "recent_listings": _visible_listings_qs().select_related("category", "seller").order_by("-created_at")[:8],
+        "popular_services": _visible_listings_qs().select_related("category", "seller")
             .filter(listing_type="service", intent="for_sale")
             .exclude(description__exact="")
             .order_by("-created_at")[:4],
@@ -257,31 +274,7 @@ def search_results_view(request):
     date_order   = (request.GET.get("date") or "newest").strip().lower()
     intent       = (request.GET.get("intent") or "all").strip().lower()
     category     = (request.GET.get("category") or "all").strip()
-
-    listings = Listing.objects.select_related("category").all()
-
-    if category != "all":
-        listings = listings.filter(category__category_name=category)
-
-    if listing_type in {"product", "service"}:
-        listings = listings.filter(listing_type=listing_type)
-
-    if query:
-        listings = listings.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )
-
-    if date_order == "oldest":
-        listings = listings.order_by("created_at")
-    else:
-        date_order = "newest"
-        listings = listings.order_by("-created_at")
-
-    total_count = listings.count()
-
-    paginator = Paginator(listings, 8)
-    page_obj = paginator.get_page(request.GET.get("page", 1))
-
+    
     db_categories = Category.objects.all().order_by("category_name")
     date_order = (request.GET.get("date") or "newest").strip().lower()
     intent = (request.GET.get("intent") or "all").strip().lower()
@@ -289,14 +282,32 @@ def search_results_view(request):
     price_min = _parse_decimal(request.GET.get("price_min"))
     price_max = _parse_decimal(request.GET.get("price_max"))
 
-    results = Listing.objects.select_related('category').all()
+    results = _visible_listings_qs().select_related("category")
 
     if query:
         results = results.filter(
             Q(title__icontains=query)
             | Q(description__icontains=query)
             | Q(category__category_name__icontains=query)
+    )
+
+    if category != "all":
+        results = results.filter(category__category_name=category)
+
+    if listing_type in {"product", "service"}:
+        results = results.filter(listing_type=listing_type)
+
+    if query:
+        results = results.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
         )
+
+    if date_order == "oldest":
+        results = results.order_by("created_at")
+    else:
+        date_order = "newest"
+        results = results.order_by("-created_at")
+
 
     if listing_type in ListingType.values:
         results = results.filter(listing_type=listing_type)
@@ -305,6 +316,9 @@ def search_results_view(request):
 
     if intent == 'offered':
         intent = ListingIntent.FOR_SALE
+        
+    if intent == 'wanted':
+        intent = ListingIntent.WANTED
 
     if intent in ListingIntent.values:
         results = results.filter(intent=intent)
@@ -325,6 +339,11 @@ def search_results_view(request):
     else:
         date_order = 'newest'
         results = results.order_by('-created_at', '-listing_id')
+    
+    total_count = results.count()
+    
+    paginator = Paginator(results, 8)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
 
     return render(request, "marketplace/search_results.html", {
         "page_title": f"Results for {query}" if query else "Search Results",
@@ -375,12 +394,15 @@ def create_listing_view(request):
         category_id = request.POST.get("category", "")
         main_picture_url = request.POST.get("main_picture_url", "").strip()
 
-        # Handle uploaded image files — use the first image as thumbnail
+        # Handle uploaded image files — save all; first becomes the thumbnail
         uploaded_images = request.FILES.getlist("images")
-        if uploaded_images:
-            saved_url = _save_uploaded_image(uploaded_images[0])
-            if saved_url:
-                thumbnail_url = saved_url
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
 
         if not title:
             messages.error(request, "Title is required.")
@@ -411,8 +433,7 @@ def create_listing_view(request):
             intent=status,
             main_picture_url=main_picture_url or None,
         )
-        listing.save()
-        messages.success(request, "Listing created!")
+        messages.success(request, "Listing submitted! It is pending admin approval.")
         return redirect("listing_detail", listing_id=listing.listing_id)
 
     context = base_context()
@@ -422,7 +443,9 @@ def create_listing_view(request):
 
 def category_listings_view(request, category_id):
     category = get_object_or_404(Category, pk=category_id)
-    listings = Listing.objects.select_related('category').filter(category_id=category_id).order_by('-created_at', '-listing_id')
+    listings = _visible_listings_qs().select_related('category').filter(
+        category_id=category_id,
+    ).order_by('-created_at', '-listing_id')
 
     return render(request, "marketplace/category_listings.html", {
         "page_title": f"{category.category_name} Listings",
@@ -452,6 +475,15 @@ def edit_listing_view(request, listing_id):
         listing.listing_type = request.POST.get("listing_type", listing.listing_type)
         listing.condition = request.POST.get("condition", listing.condition)
         main_picture_url = request.POST.get("main_picture_url", "").strip()
+        # Handle uploaded image files — save all; first becomes the thumbnail
+        uploaded_images = request.FILES.getlist("images")
+        saved_image_urls = []
+        for img_file in uploaded_images:
+            url = _save_uploaded_image(img_file)
+            if url:
+                saved_image_urls.append(url)
+        if saved_image_urls:
+            main_picture_url = saved_image_urls[0]
         if main_picture_url:
             listing.main_picture_url = main_picture_url
 
@@ -466,6 +498,8 @@ def edit_listing_view(request, listing_id):
         except (Category.DoesNotExist, ValueError):
             pass
 
+        if request.POST.get("clear_main_picture") == "1" and not main_picture_url:
+            listing.main_picture_url = None
         listing.save()
         messages.success(request, "Listing updated!")
         return redirect("listing_detail", listing_id=listing.listing_id)
@@ -486,7 +520,12 @@ def listing_detail_view(request, listing_id):
         Listing.objects.select_related("category", "seller"),
         listing_id=listing_id
     )
-    market_user = request.user if request.user.is_authenticated else None
+    viewer = request.user if request.user.is_authenticated else None
+    if listing.approval_status != ApprovalStatus.APPROVED:
+        is_owner = viewer and listing.seller_id == viewer.pk
+        if not is_owner and not _is_admin(viewer):
+            raise Http404
+    market_user = viewer
     context = base_context()
     context.update({
         "listing": listing,
@@ -498,35 +537,134 @@ def listing_detail_view(request, listing_id):
 
 # --- Dashboard/Account ---
 
+def _get_past_listings(user):
+    return Listing.objects.filter(seller=user).exclude(
+        intent__in=LIVE_LISTING_INTENTS,
+    ).exclude(
+        intent=LEGACY_LIVE_LISTING_STATUS,
+    ).order_by("-created_at")
+
+
 def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
     market_user = request.user
-    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
     unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
+    
+    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
+
+    is_admin = _is_admin(market_user)
+    pending_listings = []
+    if is_admin:
+        pending_listings = (
+            Listing.objects.filter(approval_status=ApprovalStatus.PENDING)
+            .select_related("category", "seller")
+            .order_by("created_at")
+        )
 
     context = base_context()
     context.update({
         "user": request.user,
-        "market_user": market_user,
         "user_listings": user_listings,
         "unread_count": unread_count,
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
+        "is_admin": is_admin,
+        "pending_listings": pending_listings,
     })
     return render(request, "marketplace/account.html", context)
+
+# Public facing profile page
+def profile_view(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
+    
+    user_listings = _visible_listings_qs().filter(seller=profile_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
+
+    context = base_context()
+    context.update({
+        "profile_user": profile_user,
+        "market_user": market_user,
+        "user_listings": user_listings,
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
+    })
+    return render(request, "marketplace/profile.html", context)
 
 def verify_student(request):
     context = base_context()
     return render(request, "marketplace/verify_student.html", context)
 
+
 def edit_profile(request):
     context = base_context()
+    if request.method == 'POST':
+        # Update User model fields
+        request.user.first_name = request.POST.get('first_name', '')
+        request.user.last_name = request.POST.get('last_name', '')
+        request.user.save()
+
+        # Update model fields
+        profile = request.user.profile
+
+        profile.avatar_url = request.POST.get('avatar_url', '')
+        profile.year = request.POST.get('year', '')
+        profile.major = request.POST.get('major', '')
+        profile.bio = request.POST.get('bio', '')
+        profile.save()
+        return redirect('account')
     return render(request, "marketplace/edit_profile.html", context)
 
 def past_listings(request):
     context = base_context()
     return render(request, "marketplace/past_listings.html", context)
 
+
+# --- Admin listing approval ---
+
+@require_POST
+def admin_approve_listing(request, listing_id):
+    if not _is_admin(request.user):
+        raise Http404
+
+    listing = get_object_or_404(Listing, listing_id=listing_id)
+    listing.approval_status = ApprovalStatus.APPROVED
+    listing.approved_by = request.user
+    listing.approved_at = timezone.now()
+    listing.rejection_reason = ""
+    listing.save(update_fields=[
+        "approval_status", "approved_by", "approved_at", "rejection_reason",
+    ])
+    messages.success(request, f'"{listing.title}" has been approved.')
+    return redirect("account")
+
+
+@require_POST
+def admin_reject_listing(request, listing_id):
+    if not _is_admin(request.user):
+        raise Http404
+
+    listing = get_object_or_404(Listing, listing_id=listing_id)
+    listing.approval_status = ApprovalStatus.REJECTED
+    listing.approved_by = request.user
+    listing.approved_at = timezone.now()
+    listing.rejection_reason = request.POST.get("rejection_reason", "").strip()
+    listing.save(update_fields=[
+        "approval_status", "approved_by", "approved_at", "rejection_reason",
+    ])
+    messages.success(request, f'"{listing.title}" has been rejected.')
+    return redirect("account")
 
 
 # --- Messaging ---

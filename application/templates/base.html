@@ -6,12 +6,22 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{% block title %}Alli-Trade{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
+      <!-- Google tag (gtag.js) -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-869NESK34J"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-869NESK34J');
+      </script>
+
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>{% block title %}Alli-Trade{% endblock %}</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+  <body class="min-h-screen bg-slate-100 text-slate-900">
     {% block header %}
     <header class="sticky top-0 z-30 border-b bg-white">
       <div class="bg-yellow-200 py-2 text-center text-xs font-semibold">
@@ -151,15 +161,17 @@
           {% if request.user.is_authenticated %}
             <div class="hidden items-center gap-6 md:flex">
               <div class="relative group">
-                <button class="relative flex items-center gap-1 text-sm font-medium hover:text-slate-600">
-                  Account
-                  <span class="text-xs">▼</span>
-                </button>
 
-                <div class="absolute left-0 top-full z-40 hidden w-56 pt-2 group-hover:block">
+                <a class="relative flex items-center gap-1 text-sm font-medium hover:text-slate-600" href="{% url 'account' %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                  <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
+                  </svg>
+                </a>
+
+                <div class="absolute left-1/2 top-full z-40 hidden w-56 -translate-x-1/2 pt-2 group-hover:block">
                   <div class="rounded-xl border bg-white p-2 shadow-lg">
-                    <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Listings</a>
-                    <a href="{% url 'chat' %}" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
+                    <a href="{% url 'account' %}" class="block rounded-lg px-3 py-2 mt-2 text-sm hover:bg-slate-100">Listings</a>
+                    <a href="{% url 'chat' %}" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 mt-2 text-sm hover:bg-slate-100">
                       <span>Messages</span>
                       {% if unread_count %}
                         <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
@@ -167,13 +179,17 @@
                         </span>
                       {% endif %}
                     </a>
-                    <a href="{% url 'logout' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100">Log out</a>
+                    <a href="{% url 'logout' %}" class="flex w-full items-center justify-center rounded-lg px-4 py-2.5 mt-5 text-sm font-semibold hover:bg-slate-100 border border-red-500 bg-red-50 text-red-800 transition hover:bg-red-100">
+                      <svg class="h-5 w-5 pr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                      </svg>
+                      Log out
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
           {% else %}
-            <a href="{% url 'create_listing' %}" class="text-sm font-medium hover:text-slate-600">Create Listing</a>
             <a href="{% url 'login' %}" class="text-sm font-medium hover:text-slate-600">Login</a>
             <a href="{% url 'register' %}" class="text-sm font-medium hover:text-slate-600">Sign Up</a>
           {% endif %}

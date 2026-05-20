@@ -2,7 +2,7 @@
 account.html
  This template extends the base.html template and provides the 
  HTML structure for the "Account" page in the marketplace app. 
- It displays user information, order history, and account settings.
+ It displays user own information, order history, and account settings.
  Created by Subreet Singh on 04-09-2026
 -->
 {% extends "base.html" %}
@@ -13,6 +13,7 @@ account.html
 {% block content %}
 <main class="mx-auto max-w-7xl px-6 py-10">
 
+  {% comment %}
   <!-- Unverified warning banner -->
   {% if not user.profile.is_verified %}
   <div class="mb-6 flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4">
@@ -29,6 +30,7 @@ account.html
     </a>
   </div>
   {% endif %}
+  {% endcomment %}
 
   <!-- Two-column layout -->
   <div class="flex flex-col gap-6 lg:flex-row lg:items-stretch">
@@ -55,7 +57,11 @@ account.html
         <!-- Name + email -->
         <div class="mb-3 text-center">
           <p class="text-lg font-bold tracking-tight text-slate-900">
-            {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
+            {% if user.get_full_name %}
+              {{ user.get_full_name }}
+            {% else %}
+              {{ user.username }}
+            {% endif %}
           </p>
           <p class="text-sm text-slate-500">{{ user.email }}</p>
         </div>
@@ -77,19 +83,33 @@ account.html
           <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Year</p>
             <p class="text-sm text-slate-700">
-              {% if user.profile.year %}{{ user.profile.year }}{% else %}N/A{% endif %}
+              {% if user.profile.year %}
+                {{ user.profile.year }}
+              {% else %}
+                N/A
+              {% endif %}
             </p>
           </div>
+
           <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Major</p>
             <p class="text-sm text-slate-700">
-              {% if user.profile.major %}{{ user.profile.major }}{% else %}N/A{% endif %}
+              {% if user.profile.major %}
+                {{ user.profile.major }}
+              {% else %}
+                N/A
+              {% endif %}
             </p>
           </div>
+
           <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Bio</p>
             <p class="text-sm leading-relaxed text-slate-700">
-              {% if user.profile.bio %}{{ user.profile.bio|truncatewords:25 }}{% else %}No bio yet.{% endif %}
+              {% if user.profile.bio %}
+                {{ user.profile.bio|truncatewords:25 }}
+              {% else %}
+                No bio yet.
+              {% endif %}
             </p>
           </div>
         </div>
@@ -98,6 +118,7 @@ account.html
 
         <!-- Action buttons -->
         <div class="mt-auto space-y-2">
+
           <a href="{% url 'edit_profile' %}"
              class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -107,7 +128,6 @@ account.html
             Edit Profile
           </a>
 
-
           <a href="{% url 'logout' %}"
              class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-100">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -115,96 +135,209 @@ account.html
             </svg>
             Sign Out
           </a>
-        </div>
 
+        </div>
       </div>
     </aside>
 
     <!-- RIGHT — Main content -->
     <div class="flex-1 space-y-6">
 
+      {% if is_admin %}
+      <!-- Admin: pending listings to approve -->
+      <section class="rounded-3xl bg-white p-8 shadow-sm">
+        <div class="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight">Pending Approvals</h2>
+            <p class="mt-1 text-sm text-slate-500">Review new listings submitted by users.</p>
+          </div>
+          <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            {{ pending_listings|length }} pending
+          </span>
+        </div>
+
+        {% if pending_listings %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in pending_listings %}
+              <article class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                <div class="relative">
+                  <img
+                    src="{% if listing.main_picture_url %}{{ listing.main_picture_url }}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
+                    alt="{{ listing.title }}"
+                    class="h-40 w-full object-cover"
+                  />
+                  <span class="absolute bottom-2 left-2 rounded-md bg-slate-900 px-2 py-0.5 text-xs font-bold text-white">
+                    ${{ listing.price }}
+                  </span>
+                </div>
+                <div class="p-4">
+                  <div class="mb-2 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">Pending</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{{ listing.category.category_name }}</span>
+                  </div>
+                  <h3 class="truncate font-semibold text-slate-900">{{ listing.title }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ listing.get_listing_type_display }} · {{ listing.seller.sfsu_email|default:listing.seller.username }}
+                  </p>
+                  <p class="mt-2 line-clamp-2 text-sm text-slate-600">
+                    {{ listing.description|default:"No description." }}
+                  </p>
+
+                  <div class="mt-4 flex gap-2">
+                    <form method="post" action="{% url 'admin_approve_listing' listing.listing_id %}" class="flex-1">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        Approve
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'admin_reject_listing' listing.listing_id %}" class="flex-1">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
+                  <a href="{% url 'listing_detail' listing.listing_id %}"
+                     class="mt-3 block text-center text-xs font-semibold text-slate-500 hover:text-slate-900">
+                    View full listing →
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="rounded-2xl border bg-white p-8 text-center text-slate-600">
+            No listings are pending approval.
+          </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
       <!-- Stats row -->
       <div class="grid grid-cols-3 gap-4">
-        <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ user_listings.count }}</p>
+
+        <div class="rounded-2xl p-5 text-center shadow-sm
+          {% if user_listings.count >= 1 %}
+          bg-green-100
+          {% else %}
+          bg-white
+          {% endif %}">
+
+          <p class="text-3xl font-bold tracking-tight text-slate-900 ">
+            {{ user_listings.count }}
+          </p>
+         
           <p class="mt-1 text-sm text-slate-500">Active Listings</p>
         </div>
+
         <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ sold_count|default:"0" }}</p>
+          <p class="text-3xl font-bold tracking-tight text-slate-900">
+            {{ sold_count|default:"0" }}
+          </p>
           <p class="mt-1 text-sm text-slate-500">Items Sold</p>
         </div>
+
         <div class="rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold tracking-tight text-slate-900">{{ saved_count|default:"0" }}</p>
+          <p class="text-3xl font-bold tracking-tight text-slate-900">
+            {{ saved_count|default:"0" }}
+          </p>
           <p class="mt-1 text-sm text-slate-500">Saved Items</p>
         </div>
+
       </div>
 
       <!-- My Listings -->
       <section class="rounded-3xl bg-white p-8 shadow-sm">
+
         <div class="mb-6 flex items-center justify-between">
           <h2 class="text-2xl font-bold tracking-tight">My Listings</h2>
+
           <a href="{% url 'create_listing' %}"
-             class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             + Create Listing
           </a>
         </div>
 
-        <div class="flexbox items-center">
-          <!-- Existing listings -->
-          {% for listing in user_listings %}
-          <article class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <div class="relative">
-              <img
-                src="{% if listing.main_picture_url %}{% static listing.main_picture_url %}{% else %}{% static 'images/marketplace/placeholder-listing.svg' %}{% endif %}"
-                alt="{{ listing.title }}"
-                class="h-48 w-full object-cover"
-              />
-              <span class="absolute bottom-2 left-2 rounded-md bg-slate-900 px-2 py-0.5 text-xs font-bold text-white">
-                ${{ listing.price }}
+      {% if product_listings or service_listings %}
+
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-slate-200">
+          <div class="flex gap-2">
+
+            {% if product_listings %}
+            <a href="?tab=products"
+              class="border-b-2 px-4 py-2 text-sm font-semibold
+                      {% if active_tab == 'products' %}
+                        border-slate-900 text-slate-900
+                      {% else %}
+                        border-transparent text-slate-500 hover:text-slate-900
+                      {% endif %}">
+              Products
+              <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                {{ product_listings.count }}
               </span>
-            </div>
-            <div class="p-4">
-              <div class="mb-2 flex items-center justify-between gap-2">
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                  {{ listing.category.category_name }}
-                </span>
-                <span class="text-xs text-slate-400">{{ listing.created_at|timesince }} ago</span>
-              </div>
-              <h3 class="truncate font-semibold text-slate-900">{{ listing.title }}</h3>
-              <div class="mt-2 flex flex-wrap gap-1.5 text-xs font-medium">
-                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{{ listing.get_listing_type_display }}</span>
-                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{{ listing.get_intent_display }}</span>
-              </div>
-              <a href="{% url 'listing_detail' listing.pk %}"
-                 class="mt-3 block text-sm font-semibold text-slate-600 hover:text-slate-900">
-                View Listing →
-              </a>
-            </div>
-          </article>
-          {% endfor %}
+            </a>
+            {% endif %}
 
-          <!-- Empty state (shown alongside the add tile when no listings exist) -->
-          {% if not user_listings %}
-          <div class="col-span-1 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed p-8 text-center sm:col-span-1 xl:col-span-3">
-            <div>
-              <p class="font-semibold text-slate-700">No listings yet</p>
-              <p class="mt-1 text-sm text-slate-500">Click <strong>+ Create Listing</strong> to get started.</p>
-            </div>
+            {% if service_listings %}
+            <a href="?tab=services"
+              class="border-b-2 px-4 py-2 text-sm font-semibold
+                      {% if active_tab == 'services' %}
+                        border-slate-900 text-slate-900
+                      {% else %}
+                        border-transparent text-slate-500 hover:text-slate-900
+                      {% endif %}">
+              Services
+              <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                {{ service_listings.count }}
+              </span>
+            </a>
+            {% endif %}
+
           </div>
-          {% endif %}
-
         </div>
 
-        <!--View Past listings-->
+        {% if active_tab == "products" %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in product_listings %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if active_tab == "services" %}
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for listing in service_listings %}
+              {% include "marketplace/partials/listing_tile.html" with listing=listing %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+      {% else %}
+
+        <div class="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+          <div>
+            <p class="font-semibold text-slate-700">No listings yet</p>
+            <p class="mt-1 text-sm text-slate-500">
+              Click <strong>+ Create Listing</strong> to get started.
+            </p>
+          </div>
+        </div>
+
+      {% endif %}
+
         <div class="mt-6 flex items-center justify-between">
           <a href="{% url 'past_listings' %}"
-             class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+            class="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700">
             View Past Listings
           </a>
         </div>
+
       </section>
 
-    </div><!-- /.flex-1 -->
-  </div><!-- /.two-column -->
+    </div>
+  </div>
 </main>
 {% endblock %}

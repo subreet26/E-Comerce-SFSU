@@ -8,11 +8,16 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("search/", views.search_results_view, name="search_results"),
 
+    # User Account and Profile
     path("account/", views.account_view, name="account"),
     path("account/verify_student", views.verify_student, name="verify_student"),
     path("account/edit_profile", views.edit_profile, name="edit_profile"),
     path("account/past_listings", views.past_listings, name="past_listings"),
+    
+    path("profile/<str:username>/", views.profile_view, name="profile"),
 
+    path("staff/listings/<int:listing_id>/approve/", views.admin_approve_listing, name="admin_approve_listing"),
+    path("staff/listings/<int:listing_id>/reject/", views.admin_reject_listing, name="admin_reject_listing"),
 
     path("listings/new/", views.create_listing_view, name="create_listing"),
     path("listings/<int:listing_id>/edit/", views.edit_listing_view, name="edit_listing"),
