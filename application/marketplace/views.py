@@ -271,31 +271,7 @@ def search_results_view(request):
     date_order   = (request.GET.get("date") or "newest").strip().lower()
     intent       = (request.GET.get("intent") or "all").strip().lower()
     category     = (request.GET.get("category") or "all").strip()
-
-    listings = _visible_listings_qs().select_related("category")
-
-    if category != "all":
-        listings = listings.filter(category__category_name=category)
-
-    if listing_type in {"product", "service"}:
-        listings = listings.filter(listing_type=listing_type)
-
-    if query:
-        listings = listings.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )
-
-    if date_order == "oldest":
-        listings = listings.order_by("created_at")
-    else:
-        date_order = "newest"
-        listings = listings.order_by("-created_at")
-
-    total_count = listings.count()
-
-    paginator = Paginator(listings, 8)
-    page_obj = paginator.get_page(request.GET.get("page", 1))
-
+    
     db_categories = Category.objects.all().order_by("category_name")
     date_order = (request.GET.get("date") or "newest").strip().lower()
     intent = (request.GET.get("intent") or "all").strip().lower()
@@ -303,14 +279,32 @@ def search_results_view(request):
     price_min = _parse_decimal(request.GET.get("price_min"))
     price_max = _parse_decimal(request.GET.get("price_max"))
 
-    results = _visible_listings_qs().select_related('category')
-
+    results = Listing.objects.select_related("category").all()
+    
     if query:
         results = results.filter(
             Q(title__icontains=query)
             | Q(description__icontains=query)
             | Q(category__category_name__icontains=query)
+    )
+
+    if category != "all":
+        results = results.filter(category__category_name=category)
+
+    if listing_type in {"product", "service"}:
+        results = results.filter(listing_type=listing_type)
+
+    if query:
+        results = results.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
         )
+
+    if date_order == "oldest":
+        results = results.order_by("created_at")
+    else:
+        date_order = "newest"
+        results = results.order_by("-created_at")
+
 
     if listing_type in ListingType.values:
         results = results.filter(listing_type=listing_type)
@@ -319,6 +313,9 @@ def search_results_view(request):
 
     if intent == 'offered':
         intent = ListingIntent.FOR_SALE
+        
+    if intent == 'wanted':
+        intent = ListingIntent.WANTED
 
     if intent in ListingIntent.values:
         results = results.filter(intent=intent)
@@ -339,6 +336,11 @@ def search_results_view(request):
     else:
         date_order = 'newest'
         results = results.order_by('-created_at', '-listing_id')
+    
+    total_count = results.count()
+    
+    paginator = Paginator(results, 8)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
 
     return render(request, "marketplace/search_results.html", {
         "page_title": f"Results for {query}" if query else "Search Results",
