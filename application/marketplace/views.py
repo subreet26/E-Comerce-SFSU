@@ -498,29 +498,76 @@ def listing_detail_view(request, listing_id):
 
 # --- Dashboard/Account ---
 
+# Users own account page
 def account_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
     market_user = request.user
-    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
     unread_count = Message.objects.filter(receiver=market_user, is_read=False).count()
-
+    
+    user_listings = Listing.objects.filter(seller=market_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
+    
     context = base_context()
     context.update({
         "user": request.user,
         "market_user": market_user,
         "user_listings": user_listings,
         "unread_count": unread_count,
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
     })
     return render(request, "marketplace/account.html", context)
+
+# Public facing profile page
+def profile_view(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    market_user = get_marketplace_user(request.user) if request.user.is_authenticated else None
+    
+    user_listings = Listing.objects.filter(seller=profile_user).order_by("-created_at")
+    product_listings = user_listings.filter(listing_type="product")
+    service_listings = user_listings.filter(listing_type="service")
+    
+    active_tab = request.GET.get("tab", "products")
+
+    context = base_context()
+    context.update({
+        "profile_user": profile_user,
+        "market_user": market_user,
+        "user_listings": user_listings,
+        "product_listings": product_listings,
+        "service_listings": service_listings,
+        "active_tab": active_tab,
+    })
+    return render(request, "marketplace/profile.html", context)
 
 def verify_student(request):
     context = base_context()
     return render(request, "marketplace/verify_student.html", context)
 
+
 def edit_profile(request):
     context = base_context()
+    if request.method == 'POST':
+        # Update User model fields
+        request.user.first_name = request.POST.get('first_name', '')
+        request.user.last_name = request.POST.get('last_name', '')
+        request.user.save()
+
+        # Update model fields
+        profile = request.user.profile
+
+        profile.avatar_url = request.POST.get('avatar_url', '')
+        profile.year = request.POST.get('year', '')
+        profile.major = request.POST.get('major', '')
+        profile.bio = request.POST.get('bio', '')
+        profile.save()
+        return redirect('account')
     return render(request, "marketplace/edit_profile.html", context)
 
 def past_listings(request):
