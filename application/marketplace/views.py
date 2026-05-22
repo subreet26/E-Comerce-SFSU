@@ -342,7 +342,7 @@ def search_results_view(request):
     
     total_count = results.count()
     
-    paginator = Paginator(results, 8)
+    paginator = Paginator(results, 20)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
     return render(request, "marketplace/search_results.html", {
