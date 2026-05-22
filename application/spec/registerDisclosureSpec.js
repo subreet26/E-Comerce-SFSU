@@ -11,12 +11,10 @@ describe("registration disclosure", () => {
     );
 
     const template = fs.readFileSync(templatePath, "utf8");
+    const visibleText = template.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-    expect(template).toContain(
-      'By clicking "Register", you agree to the <a class="font-semibold" href="#" target="__blank">Terms of Service</a>'
-    );
-    expect(template).toContain(
-      "California residents: see our Privacy Policy for your rights under the CCPA/CPRA and the “Do Not Sell My Personal Information” option"
+    expect(visibleText).toContain(
+      'By clicking "Register", you agree to the Terms of Service and Privacy Policy. California residents: see our Privacy Policy for your rights under the CCPA/CPRA and the “Do Not Sell My Personal Information” option.'
     );
   });
 });
