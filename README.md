@@ -37,3 +37,21 @@ Infrastructure
 * Nginx
 * Gunicorn
 * GitHub
+
+## Key Contributions
+### * Backend feature development in Django
+* Search functionality and listing management improvements
+* Listing approval workflow implementation
+* UI and user experience enhancements
+* AWS deployment and server configuration
+* Google Analytics integration
+* Production debugging and issue resolution
+
+* ## What I Learned
+* ### This project strengthened my experience in:
+
+* Full-stack web development
+* Cloud deployment and server administration
+* Database-driven application design
+* Team-based software engineering workflows
+* Production troubleshooting and maintenance
