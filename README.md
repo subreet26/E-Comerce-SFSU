@@ -39,7 +39,9 @@ Infrastructure
 * GitHub
 
 ## Key Contributions
-### * Backend feature development in Django
+* Organized Team meetings and deadlines
+* Setup Jira Tasks and management
+* Backend feature development in Django
 * Search functionality and listing management improvements
 * Listing approval workflow implementation
 * UI and user experience enhancements
@@ -48,7 +50,7 @@ Infrastructure
 * Production debugging and issue resolution
 
 * ## What I Learned
-* ### This project strengthened my experience in:
+* This project strengthened my experience in:
 
 * Full-stack web development
 * Cloud deployment and server administration
